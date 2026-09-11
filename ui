@@ -400,7 +400,7 @@ local function CreateLoader(screenGui, onDone)
         end)
         task.wait(0.3)
 
-        -- Emissão dos 5 logs de status solicitados
+        -- Emissão dos 5 logs de status solicitados (Efeito Typewriter no DevConsole F9)
         local statusLogs = {
             "loaded",
             "config",
@@ -409,12 +409,21 @@ local function CreateLoader(screenGui, onDone)
             "axion on"
         }
 
-        for _, log in ipairs(statusLogs) do
-            print("[Axion] " .. log)
-            if rconsoleprint then
-                pcall(function() rconsoleprint("[Axion] " .. log .. "\n") end)
+        local function typewriterPrint(text)
+            local line = "[Axion] " .. text .. "\n"
+            for i = 1, #line do
+                local char = line:sub(i, i)
+                if rconsoleprint then
+                    pcall(function() rconsoleprint(char) end)
+                end
+                task.wait(0.03)
             end
-            task.wait(0.25)
+            print("[Axion] " .. text)
+        end
+
+        for _, log in ipairs(statusLogs) do
+            typewriterPrint(log)
+            task.wait(0.15)
         end
 
         task.wait(0.6)
@@ -527,6 +536,7 @@ function KraviX:CreateWindow(config)
     local IconSlots = {}
     local IconFallbacks = {}
     local isSidebarExpanded = false
+    local LogoAxionLbl
 
     local function ExpandSidebar()
         if isSidebarExpanded then return end
@@ -534,9 +544,12 @@ function KraviX:CreateWindow(config)
         Tween(IconBar, {Size = UDim2.new(0, ICON_BAR_EXP_W, 1, 0)}, 0.2, Enum.EasingStyle.Quint):Play()
         Tween(IconSep, {Position = UDim2.new(0, ICON_BAR_EXP_W, 0, 0)}, 0.2, Enum.EasingStyle.Quint):Play()
         Tween(ContentArea, {Position = UDim2.new(0, ICON_BAR_EXP_W + 1, 0, 0), Size = UDim2.new(1, -ICON_BAR_EXP_W - 1, 1, 0)}, 0.2, Enum.EasingStyle.Quint):Play()
+        if LogoAxionLbl then
+            Tween(LogoAxionLbl, {TextTransparency = 0}, 0.18):Play()
+        end
         for _, tab in ipairs(Window.Tabs) do
             if tab.Btn then
-                Tween(tab.Btn, {Size = UDim2.new(0, ICON_BAR_EXP_W - 10, 0, 34)}, 0.2, Enum.EasingStyle.Quint):Play()
+                Tween(tab.Btn, {Size = UDim2.new(0, ICON_BAR_EXP_W - 12, 0, 36)}, 0.2, Enum.EasingStyle.Quint):Play()
             end
             if tab.FullNameLbl then
                 Tween(tab.FullNameLbl, {TextTransparency = 0}, 0.18):Play()
@@ -550,9 +563,12 @@ function KraviX:CreateWindow(config)
         Tween(IconBar, {Size = UDim2.new(0, ICON_BAR_W, 1, 0)}, 0.2, Enum.EasingStyle.Quint):Play()
         Tween(IconSep, {Position = UDim2.new(0, ICON_BAR_W, 0, 0)}, 0.2, Enum.EasingStyle.Quint):Play()
         Tween(ContentArea, {Position = UDim2.new(0, ICON_BAR_W + 1, 0, 0), Size = UDim2.new(1, -ICON_BAR_W - 1, 1, 0)}, 0.2, Enum.EasingStyle.Quint):Play()
+        if LogoAxionLbl then
+            Tween(LogoAxionLbl, {TextTransparency = 1}, 0.15):Play()
+        end
         for _, tab in ipairs(Window.Tabs) do
             if tab.Btn then
-                Tween(tab.Btn, {Size = UDim2.new(0, 38, 0, 34)}, 0.2, Enum.EasingStyle.Quint):Play()
+                Tween(tab.Btn, {Size = UDim2.new(0, 36, 0, 36)}, 0.2, Enum.EasingStyle.Quint):Play()
             end
             if tab.FullNameLbl then
                 Tween(tab.FullNameLbl, {TextTransparency = 1}, 0.15):Play()
@@ -572,14 +588,28 @@ function KraviX:CreateWindow(config)
 
     -- Logo "Kx" no topo do IconBar (Sempre Fixo e Visível)
     local LogoLbl = Instance.new("TextLabel", IconBar)
-    LogoLbl.Size = UDim2.new(0,48,0,40)
-    LogoLbl.Position = UDim2.new(0,0,0,0)
+    LogoLbl.Size = UDim2.new(0,38,0,40)
+    LogoLbl.Position = UDim2.new(0,5,0,0)
     LogoLbl.BackgroundTransparency = 1
     LogoLbl.Text = "Kx"
     LogoLbl.TextColor3 = C.Accent
     LogoLbl.TextSize = 18; LogoLbl.Font = Enum.Font.GothamBlack
     LogoLbl.TextXAlignment = Enum.TextXAlignment.Center
+    LogoLbl.TextYAlignment = Enum.TextYAlignment.Center
     LogoLbl.ZIndex = 35
+
+    -- Logo "Axion" que aparece ao expandir a barra lateral
+    LogoAxionLbl = Instance.new("TextLabel", IconBar)
+    LogoAxionLbl.Size = UDim2.new(0, 85, 0, 40)
+    LogoAxionLbl.Position = UDim2.new(0, 42, 0, 0)
+    LogoAxionLbl.BackgroundTransparency = 1
+    LogoAxionLbl.Text = "Axion"
+    LogoAxionLbl.TextColor3 = C.Accent
+    LogoAxionLbl.TextSize = 18; LogoAxionLbl.Font = Enum.Font.GothamBlack
+    LogoAxionLbl.TextXAlignment = Enum.TextXAlignment.Left
+    LogoAxionLbl.TextYAlignment = Enum.TextYAlignment.Center
+    LogoAxionLbl.TextTransparency = 1
+    LogoAxionLbl.ZIndex = 35
 
     -- Separador abaixo do logo
     local LogoSep = Instance.new("Frame", IconBar)
@@ -591,8 +621,8 @@ function KraviX:CreateWindow(config)
     -- Indicador ativo (linha roxa na esquerda do ícone ativo)
     local ActiveIndicator = Instance.new("Frame", IconBar)
     ActiveIndicator.Name = "ActiveIndicator"
-    ActiveIndicator.Size = UDim2.new(0,3,0,28)
-    ActiveIndicator.Position = UDim2.new(0,0,0,60)
+    ActiveIndicator.Size = UDim2.new(0,3,0,30)
+    ActiveIndicator.Position = UDim2.new(0,0,0,51)
     ActiveIndicator.BackgroundColor3 = C.Accent
     ActiveIndicator.BorderSizePixel = 0; ActiveIndicator.ZIndex = 13
     mkCorner(ActiveIndicator, 3)
@@ -745,11 +775,11 @@ function KraviX:CreateWindow(config)
         local letter = (name and #name > 0) and name:sub(1,1):upper() or "T"
 
         -- Slot no IconBar (TextButton)
-        local slotY = 50 + (tabIndex - 1) * 44
+        local slotY = 48 + (tabIndex - 1) * 42
         local SlotFrame = Instance.new("TextButton", IconBar)
         SlotFrame.Name = "TabSlot_" .. tostring(tabIndex)
-        SlotFrame.Size = UDim2.new(0, isSidebarExpanded and (ICON_BAR_EXP_W - 10) or 38, 0, 34)
-        SlotFrame.Position = UDim2.new(0, 5, 0, slotY)
+        SlotFrame.Size = UDim2.new(0, isSidebarExpanded and (ICON_BAR_EXP_W - 12) or 36, 0, 36)
+        SlotFrame.Position = UDim2.new(0, 6, 0, slotY)
         SlotFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
         SlotFrame.BackgroundTransparency = 0
         SlotFrame.Text = ""
@@ -759,12 +789,15 @@ function KraviX:CreateWindow(config)
         mkCorner(SlotFrame, 6)
         local SlotStroke = mkStroke(SlotFrame, Color3.fromRGB(32, 32, 38), 1, 0)
 
-        -- Badge da Letra (Lado esquerdo do botão - SEMPRE VISÍVEL & BRANCA!)
+        -- Badge da Letra (Quadrado 36x36 com fundo escuro elegante)
         local LetterBadge = Instance.new("Frame", SlotFrame)
-        LetterBadge.Size = UDim2.new(0, 34, 0, 34)
+        LetterBadge.Size = UDim2.new(0, 36, 0, 36)
         LetterBadge.Position = UDim2.new(0, 0, 0, 0)
-        LetterBadge.BackgroundTransparency = 1
+        LetterBadge.BackgroundColor3 = Color3.fromRGB(22, 22, 28)
+        LetterBadge.BorderSizePixel = 0
         LetterBadge.ZIndex = 32
+        mkCorner(LetterBadge, 6)
+        mkStroke(LetterBadge, Color3.fromRGB(38, 38, 46), 1, 0)
 
         local LetterLbl = Instance.new("TextLabel", LetterBadge)
         LetterLbl.Size = UDim2.new(1, 0, 1, 0)
@@ -774,18 +807,20 @@ function KraviX:CreateWindow(config)
         LetterLbl.TextSize = 14
         LetterLbl.Font = Enum.Font.GothamBlack
         LetterLbl.TextXAlignment = Enum.TextXAlignment.Center
+        LetterLbl.TextYAlignment = Enum.TextYAlignment.Center
         LetterLbl.ZIndex = 33
 
         -- Nome completo da Tab (ex: "ESP")
         local FullNameLbl = Instance.new("TextLabel", SlotFrame)
-        FullNameLbl.Size = UDim2.new(1, -40, 1, 0)
-        FullNameLbl.Position = UDim2.new(0, 38, 0, 0)
+        FullNameLbl.Size = UDim2.new(1, -46, 1, 0)
+        FullNameLbl.Position = UDim2.new(0, 44, 0, 0)
         FullNameLbl.BackgroundTransparency = 1
         FullNameLbl.Text = name
         FullNameLbl.TextColor3 = C.Text
         FullNameLbl.TextSize = 11
         FullNameLbl.Font = Enum.Font.GothamBold
         FullNameLbl.TextXAlignment = Enum.TextXAlignment.Left
+        FullNameLbl.TextYAlignment = Enum.TextYAlignment.Center
         FullNameLbl.TextTransparency = isSidebarExpanded and 0 or 1
         FullNameLbl.ZIndex = 33
 
@@ -892,7 +927,7 @@ function KraviX:CreateWindow(config)
             end
 
             -- Move indicador ativo com animação fluida
-            local indicatorY = 50 + (tabIndex - 1) * 44 + 3
+            local indicatorY = 48 + (tabIndex - 1) * 42 + 3
             Tween(ActiveIndicator,{Position=UDim2.new(0,0,0,indicatorY)},0.22,Enum.EasingStyle.Quint):Play()
 
             -- Animação de entrada fluida da nova tab (Slide de baixo para cima + Fade Overlay)
