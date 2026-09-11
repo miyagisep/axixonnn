@@ -374,10 +374,10 @@ local function CreateLoader(screenGui, onDone)
     LoadTxt.TextXAlignment = Enum.TextXAlignment.Center
     LoadTxt.ZIndex = 205
 
-    -- Processo de carregamento suave (duração ~2.5s)
+    -- Processo de carregamento mais lento para visualização (~5.5s)
     task.spawn(function()
-        local steps = 50
-        local totalTime = 2.5 * TWEEN_SPD
+        local steps = 60
+        local totalTime = 5.5 * TWEEN_SPD
         local delayPerStep = totalTime / steps
         for i = 1, steps do
             local pct = i / steps
@@ -393,6 +393,38 @@ local function CreateLoader(screenGui, onDone)
         Tween(LoaderOverlay, {BackgroundTransparency = 1}, 0.22):Play()
         task.wait(0.25)
         LoaderOverlay:Destroy()
+
+        -- Abre o Console F9 do Roblox
+        pcall(function()
+            game:GetService("StarterGui"):SetCore("DevConsoleVisible", true)
+        end)
+        task.wait(0.3)
+
+        -- Emissão dos 5 logs de status solicitados
+        local statusLogs = {
+            "loaded",
+            "config",
+            "clound on",
+            "bypass working",
+            "axion on"
+        }
+
+        for _, log in ipairs(statusLogs) do
+            print("[Axion] " .. log)
+            if rconsoleprint then
+                pcall(function() rconsoleprint("[Axion] " .. log .. "\n") end)
+            end
+            task.wait(0.25)
+        end
+
+        task.wait(0.6)
+
+        -- Fecha o Console F9 do Roblox
+        pcall(function()
+            game:GetService("StarterGui"):SetCore("DevConsoleVisible", false)
+        end)
+
+        task.wait(0.3)
         onDone()
     end)
 end
@@ -474,6 +506,24 @@ function KraviX:CreateWindow(config)
     IconBar.ClipsDescendants = true
     mkCorner(IconBar, 6)
 
+    -- Separador direita do IconBar
+    local IconSep = Instance.new("Frame", Main)
+    IconSep.Size = UDim2.new(0,1,1,0)
+    IconSep.Position = UDim2.new(0,ICON_BAR_W,0,0)
+    IconSep.BackgroundColor3 = C.Border
+    IconSep.BorderSizePixel = 0; IconSep.ZIndex = 31
+
+    -- ══════════════════════════════════════
+    -- ÁREA DE CONTEÚDO (direita)
+    -- ══════════════════════════════════════
+    local ContentArea = Instance.new("Frame", Main)
+    ContentArea.Name = "ContentArea"
+    ContentArea.Size = UDim2.new(1,-ICON_BAR_W-1,1,0)
+    ContentArea.Position = UDim2.new(0,ICON_BAR_W+1,0,0)
+    ContentArea.BackgroundTransparency = 1
+    ContentArea.BorderSizePixel = 0; ContentArea.ZIndex = 10
+    ContentArea.ClipsDescendants = true
+
     local IconSlots = {}
     local IconFallbacks = {}
     local isSidebarExpanded = false
@@ -482,6 +532,8 @@ function KraviX:CreateWindow(config)
         if isSidebarExpanded then return end
         isSidebarExpanded = true
         Tween(IconBar, {Size = UDim2.new(0, ICON_BAR_EXP_W, 1, 0)}, 0.2, Enum.EasingStyle.Quint):Play()
+        Tween(IconSep, {Position = UDim2.new(0, ICON_BAR_EXP_W, 0, 0)}, 0.2, Enum.EasingStyle.Quint):Play()
+        Tween(ContentArea, {Position = UDim2.new(0, ICON_BAR_EXP_W + 1, 0, 0), Size = UDim2.new(1, -ICON_BAR_EXP_W - 1, 1, 0)}, 0.2, Enum.EasingStyle.Quint):Play()
         for _, tab in ipairs(Window.Tabs) do
             if tab.Btn then
                 Tween(tab.Btn, {Size = UDim2.new(0, ICON_BAR_EXP_W - 10, 0, 34)}, 0.2, Enum.EasingStyle.Quint):Play()
@@ -496,6 +548,8 @@ function KraviX:CreateWindow(config)
         if not isSidebarExpanded then return end
         isSidebarExpanded = false
         Tween(IconBar, {Size = UDim2.new(0, ICON_BAR_W, 1, 0)}, 0.2, Enum.EasingStyle.Quint):Play()
+        Tween(IconSep, {Position = UDim2.new(0, ICON_BAR_W, 0, 0)}, 0.2, Enum.EasingStyle.Quint):Play()
+        Tween(ContentArea, {Position = UDim2.new(0, ICON_BAR_W + 1, 0, 0), Size = UDim2.new(1, -ICON_BAR_W - 1, 1, 0)}, 0.2, Enum.EasingStyle.Quint):Play()
         for _, tab in ipairs(Window.Tabs) do
             if tab.Btn then
                 Tween(tab.Btn, {Size = UDim2.new(0, 38, 0, 34)}, 0.2, Enum.EasingStyle.Quint):Play()
@@ -516,27 +570,21 @@ function KraviX:CreateWindow(config)
     IconBarFix.BackgroundColor3 = C.IconBar
     IconBarFix.BorderSizePixel = 0; IconBarFix.ZIndex = 11
 
-    -- Separador direita do IconBar
-    local IconSep = Instance.new("Frame", Main)
-    IconSep.Size = UDim2.new(0,1,1,0)
-    IconSep.Position = UDim2.new(0,ICON_BAR_W,0,0)
-    IconSep.BackgroundColor3 = C.Border
-    IconSep.BorderSizePixel = 0; IconSep.ZIndex = 11
-
-    -- Logo "Kx" no topo do IconBar
+    -- Logo "Kx" no topo do IconBar (Sempre Fixo e Visível)
     local LogoLbl = Instance.new("TextLabel", IconBar)
-    LogoLbl.Size = UDim2.new(1,0,0,40)
+    LogoLbl.Size = UDim2.new(0,48,0,40)
+    LogoLbl.Position = UDim2.new(0,0,0,0)
     LogoLbl.BackgroundTransparency = 1
     LogoLbl.Text = "Kx"
     LogoLbl.TextColor3 = C.Accent
-    LogoLbl.TextSize = 16; LogoLbl.Font = Enum.Font.GothamBlack
+    LogoLbl.TextSize = 18; LogoLbl.Font = Enum.Font.GothamBlack
     LogoLbl.TextXAlignment = Enum.TextXAlignment.Center
-    LogoLbl.ZIndex = 12
+    LogoLbl.ZIndex = 35
 
     -- Separador abaixo do logo
     local LogoSep = Instance.new("Frame", IconBar)
     LogoSep.Size = UDim2.new(0,28,0,1)
-    LogoSep.Position = UDim2.new(0.5,-14,0,40)
+    LogoSep.Position = UDim2.new(0,10,0,40)
     LogoSep.BackgroundColor3 = C.Border
     LogoSep.BorderSizePixel = 0; LogoSep.ZIndex = 12
 
@@ -554,16 +602,7 @@ function KraviX:CreateWindow(config)
     local IconSlots = {}  -- {frame, tabIndex}
     local IconFallbacks = {}  -- guarda referência do FallbackLbl por tabIndex
 
-    -- ══════════════════════════════════════
-    -- ÁREA DE CONTEÚDO (direita)
-    -- ══════════════════════════════════════
-    local ContentArea = Instance.new("Frame", Main)
-    ContentArea.Name = "ContentArea"
-    ContentArea.Size = UDim2.new(1,-ICON_BAR_W-1,1,0)
-    ContentArea.Position = UDim2.new(0,ICON_BAR_W+1,0,0)
-    ContentArea.BackgroundTransparency = 1
-    ContentArea.BorderSizePixel = 0; ContentArea.ZIndex = 10
-    ContentArea.ClipsDescendants = true
+
 
     -- TopBar (dentro da ContentArea)
     local TopBar = Instance.new("Frame", ContentArea)
@@ -805,6 +844,9 @@ function KraviX:CreateWindow(config)
         FadeOverlay.BackgroundTransparency = 1; FadeOverlay.BorderSizePixel = 0; FadeOverlay.ZIndex = 50
 
         local function SelectTab()
+            if activeTabIndex == tabIndex and TabContent.Visible then return end
+
+            local prevTab = Window.Tabs[activeTabIndex]
             activeTabIndex = tabIndex
             TabNameLbl.Text = name
             task.defer(function()
@@ -813,35 +855,53 @@ function KraviX:CreateWindow(config)
                 TabNameLbl.Position = UDim2.fromOffset((topW - lblW)/2, 0)
             end)
 
+            -- Animação de saída da tab anterior
+            if prevTab and prevTab.Container and prevTab.Container ~= TabContent then
+                local prevCont = prevTab.Container
+                Tween(prevCont, {Position = UDim2.new(0, 0, 0, -10)}, 0.12, Enum.EasingStyle.Quint, Enum.EasingDirection.In):Play()
+                task.delay(0.12, function()
+                    if prevTab.Index ~= activeTabIndex then
+                        prevCont.Visible = false
+                        prevCont.Position = UDim2.new(0, 0, 0, 0)
+                    end
+                end)
+            end
+
             for _, t in ipairs(Window.Tabs) do
                 local on = t.Index == activeTabIndex
-                if not on then t.Container.Visible = false end
-                
+                if not on and t.Index ~= (prevTab and prevTab.Index or 0) then
+                    t.Container.Visible = false
+                end
+
                 local slotFrame = IconSlots[t.Index]
                 local letterLbl = IconFallbacks[t.Index]
                 if slotFrame then
                     local st = slotFrame:FindFirstChildOfClass("UIStroke")
                     if on then
-                        Tween(slotFrame, {BackgroundColor3 = Color3.fromRGB(35, 22, 55)}, 0.12):Play()
-                        if st then Tween(st, {Color = C.Accent}, 0.12):Play() end
+                        Tween(slotFrame, {BackgroundColor3 = Color3.fromRGB(35, 22, 55)}, 0.15):Play()
+                        if st then Tween(st, {Color = C.Accent}, 0.15):Play() end
                     else
-                        Tween(slotFrame, {BackgroundColor3 = Color3.fromRGB(18, 18, 22)}, 0.12):Play()
-                        if st then Tween(st, {Color = Color3.fromRGB(32, 32, 38)}, 0.12):Play() end
+                        Tween(slotFrame, {BackgroundColor3 = Color3.fromRGB(18, 18, 22)}, 0.15):Play()
+                        if st then Tween(st, {Color = Color3.fromRGB(32, 32, 38)}, 0.15):Play() end
                     end
                 end
                 if letterLbl then
-                    letterLbl.TextColor3 = on and C.Accent or C.Sub
+                    letterLbl.TextColor3 = Color3.fromRGB(255, 255, 255)
                     letterLbl.Font = on and Enum.Font.GothamBlack or Enum.Font.GothamBold
                 end
             end
 
-            -- Move indicador ativo
+            -- Move indicador ativo com animação fluida
             local indicatorY = 50 + (tabIndex - 1) * 44 + 3
-            Tween(ActiveIndicator,{Position=UDim2.new(0,0,0,indicatorY)},0.2,Enum.EasingStyle.Quint):Play()
+            Tween(ActiveIndicator,{Position=UDim2.new(0,0,0,indicatorY)},0.22,Enum.EasingStyle.Quint):Play()
 
+            -- Animação de entrada fluida da nova tab (Slide de baixo para cima + Fade Overlay)
+            TabContent.Position = UDim2.new(0, 0, 0, 12)
             TabContent.Visible = true
+            Tween(TabContent, {Position = UDim2.new(0, 0, 0, 0)}, 0.22, Enum.EasingStyle.Quint):Play()
+
             FadeOverlay.BackgroundTransparency = 0
-            Tween(FadeOverlay,{BackgroundTransparency=1},0.14,Enum.EasingStyle.Quad):Play()
+            Tween(FadeOverlay, {BackgroundTransparency = 1}, 0.20, Enum.EasingStyle.Quad):Play()
         end
 
         SlotFrame.MouseButton1Click:Connect(SelectTab)
@@ -899,16 +959,22 @@ function KraviX:CreateWindow(config)
             SubFadeOverlay.BackgroundTransparency = 1; SubFadeOverlay.BorderSizePixel = 0; SubFadeOverlay.ZIndex = 50
 
             local function SelectSub()
+                if tabEntry.ActiveSub == subIndex and SubPanel.Visible then return end
+
                 tabEntry.ActiveSub = subIndex
                 for _, st in ipairs(tabEntry.SubTabs) do
                     local on = st.Index == subIndex
                     if not on then st.Panel.Visible = false end
-                    Tween(st.Btn,{TextColor3=on and C.Accent or C.Muted},0.1):Play()
+                    Tween(st.Btn,{TextColor3=on and C.Accent or C.Muted},0.12):Play()
                     st.Btn.Font = on and Enum.Font.GothamBold or Enum.Font.Gotham
                 end
+
+                SubPanel.Position = UDim2.new(0, 0, 0, 10)
                 SubPanel.Visible = true
+                Tween(SubPanel, {Position = UDim2.new(0, 0, 0, 0)}, 0.20, Enum.EasingStyle.Quint):Play()
+
                 SubFadeOverlay.BackgroundTransparency = 0
-                Tween(SubFadeOverlay,{BackgroundTransparency=1},0.14,Enum.EasingStyle.Quad):Play()
+                Tween(SubFadeOverlay, {BackgroundTransparency = 1}, 0.18, Enum.EasingStyle.Quad):Play()
             end
 
             SBtn.MouseButton1Click:Connect(SelectSub)
