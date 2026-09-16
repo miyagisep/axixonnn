@@ -1,5 +1,5 @@
 --[[
-    4/22/2026
+    5/22/2026
     Library.lua
     Purpose:
         NH ui library
@@ -7459,8 +7459,8 @@ do
                     Name = "\0",
                     Parent = Items["Header"].Instance,
                     BackgroundTransparency = 1,
-                    Position = UDim2.new(0, 6, 0, 26),
-                    Size = UDim2.new(1, -12, 1, -36),
+                    Position = UDim2.new(0, 6, 0, 6),
+                    Size = UDim2.new(1, -12, 1, -12),
                     BorderSizePixel = 0,
                     ZIndex = 2,
                     BackgroundColor3 = Color3.fromRGB(0, 0, 0)
@@ -7494,7 +7494,8 @@ do
                 Items["HeaderAccent"] = Library:Create("Frame", {
                     Name = "\0",
                     Parent = Items["HeaderSecondInline"].Instance,
-                    Size = UDim2.new(1, 0, 0, 1),
+                    Size = UDim2.new(1, 0, 0, 0),
+                    Visible = false,
                     BorderSizePixel = 0,
                     BackgroundColor3 = Color3.fromRGB(19, 128, 225)
                 }):AddToTheme({ BackgroundColor3 = "Accent" })
@@ -7503,7 +7504,8 @@ do
                     Name = "\0",
                     Parent = Items["HeaderSecondInline"].Instance,
                     Position = UDim2.new(0, 0, 0, 1),
-                    Size = UDim2.new(1, 0, 0, 1),
+                    Size = UDim2.new(1, 0, 0, 0),
+                    Visible = false,
                     BorderSizePixel = 0,
                     BackgroundColor3 = Color3.fromRGB(46, 46, 46)
                 }):AddToTheme({ BackgroundColor3 = function() return Library.Theme["Outline"] end })
@@ -7512,7 +7514,8 @@ do
                     Name = "\0",
                     Parent = Items["HeaderSecondInline"].Instance,
                     Position = UDim2.new(0, 0, 0, 2),
-                    Size = UDim2.new(1, 0, 0, 1),
+                    Size = UDim2.new(1, 0, 0, 0),
+                    Visible = false,
                     BorderSizePixel = 0,
                     BackgroundColor3 = Color3.fromRGB(10, 10, 15)
                 }):AddToTheme({ BackgroundColor3 = function() return Library.Theme["Border"] end })
@@ -7521,8 +7524,8 @@ do
                     Name = "\0",
                     Parent = Items["Header"].Instance,
                     BackgroundTransparency = 1,
-                    Position = UDim2.new(0, 6, 0, 26),
-                    Size = UDim2.new(1, -12, 1, -36),
+                    Position = UDim2.new(0, 6, 0, 6),
+                    Size = UDim2.new(1, -12, 1, -12),
                     BorderSizePixel = 0,
                     BackgroundColor3 = Color3.fromRGB(0, 0, 0)
                 })
@@ -7541,7 +7544,8 @@ do
                     FontFace = Library.Font,
                     TextColor3 = Color3.fromRGB(235, 235, 235),
                     TextStrokeColor3 = Color3.fromRGB(255, 255, 255),
-                    Text = Window.Title,
+                    Text = "",
+                    Visible = false,
                     AnchorPoint = Vector2.new(0, 1),
                     BorderSizePixel = 0,
                     BackgroundTransparency = 1,
@@ -7565,6 +7569,7 @@ do
                     Position = UDim2.new(1, 1, 0, -6),
                     Size = UDim2.new(0, 0, 0, 16),
                     BorderSizePixel = 0,
+                    Visible = false,
                     BackgroundColor3 = Color3.fromRGB(255, 255, 255)
                 })
 
@@ -7583,6 +7588,7 @@ do
                     AutoButtonColor = false,
                     Active = false,
                     Selectable = false,
+                    Visible = false,
                     Text = "",
                     Size = UDim2.new(0, 0, 0, 16),
                     AutomaticSize = Enum.AutomaticSize.X,
@@ -7615,7 +7621,7 @@ do
                     Parent = Items["DockOutline"].Instance,
                     FontFace = Library.Font,
                     TextSize = 9,
-                    Text = Window.DockButtonText,
+                    Text = "",
                     TextColor3 = Color3.fromRGB(145, 145, 145),
                     TextStrokeColor3 = Color3.fromRGB(255, 255, 255),
                     BackgroundTransparency = 1,
@@ -7662,35 +7668,47 @@ do
                 Items["PagesOutline"] = Library:Create("Frame", {
                     Name = "\0",
                     Parent = Items["MainFrame"].Instance,
-                    Position = UDim2.new(0, 10, 0, 11),
-                    Size = UDim2.new(1, -20, 0, 30),
+                    Position = UDim2.new(0, 10, 0, 10),
+                    Size = UDim2.new(1, -20, 0, 32),
                     BorderSizePixel = 0,
-                    BackgroundColor3 = Library.Theme["Border 2"]
-                }):AddToTheme({ BackgroundColor3 = 'Border 2' })
+                    BackgroundColor3 = Color3.fromRGB(18, 19, 24)
+                }):AddToTheme({ BackgroundColor3 = 'Section' })
+
+                Library:Create("UICorner", {
+                    CornerRadius = UDim.new(0, 6),
+                    Parent = Items["PagesOutline"].Instance
+                })
+
+                Library:Create("UIStroke", {
+                    Name = "\0",
+                    Parent = Items["PagesOutline"].Instance,
+                    Color = Color3.fromRGB(36, 38, 48),
+                    Thickness = 1
+                }):AddToTheme({ Color = 'Outline' })
 
                 Library:Create("UIListLayout", {
                     Name = "\0",
                     Parent = Items["PagesOutline"].Instance,
                     FillDirection = Enum.FillDirection.Horizontal,
                     HorizontalFlex = Enum.UIFlexAlignment.Fill,
-                    Padding = UDim.new(0, 1),
+                    Padding = UDim.new(0, 4),
                     SortOrder = Enum.SortOrder.LayoutOrder
                 })
 
                 Library:Create("UIPadding", {
                     Name = "\0",
                     Parent = Items["PagesOutline"].Instance,
-                    PaddingTop = UDim.new(0, 1),
-                    PaddingBottom = UDim.new(0, 1),
-                    PaddingRight = UDim.new(0, 1),
-                    PaddingLeft = UDim.new(0, 1)
+                    PaddingTop = UDim.new(0, 3),
+                    PaddingBottom = UDim.new(0, 3),
+                    PaddingRight = UDim.new(0, 4),
+                    PaddingLeft = UDim.new(0, 4)
                 })
 
                 Items["ContentOutline"] = Library:Create("Frame", {
                     Name = "\0",
                     Parent = Items["MainFrame"].Instance,
-                    Position = UDim2.new(0, 10, 0, 42),
-                    Size = UDim2.new(1, -20, 1, -52),
+                    Position = UDim2.new(0, 10, 0, 48),
+                    Size = UDim2.new(1, -20, 1, -58),
                     BorderSizePixel = 0,
                     BackgroundColor3 = Library.Theme["Border 2"]
                 }):AddToTheme({ BackgroundColor3 = 'Border 2' })
@@ -7941,8 +7959,13 @@ do
                     AutoButtonColor = false,
                     Size = UDim2.new(1, 0, 1, 0),
                     BorderSizePixel = 0,
-                    BackgroundColor3 = Library.Theme["Outline"]
-                }):AddToTheme({ BackgroundColor3 = 'Outline' })
+                    BackgroundColor3 = Color3.fromRGB(22, 23, 30)
+                }):AddToTheme({ BackgroundColor3 = 'Section' })
+
+                Library:Create("UICorner", {
+                    CornerRadius = UDim.new(0, 5),
+                    Parent = Items["Inactive"].Instance
+                })
 
                 Items["InactiveInline"] = Library:Create("TextButton", {
                     Name = "\0",
@@ -7952,20 +7975,31 @@ do
                     TextColor3 = Color3.fromRGB(0, 0, 0),
                     Text = "",
                     AutoButtonColor = false,
-                    Position = UDim2.new(0, 1, 0, 1),
-                    Size = UDim2.new(1, -2, 1, -2),
+                    Position = UDim2.new(0, 0, 0, 0),
+                    Size = UDim2.new(1, 0, 1, 0),
                     BorderSizePixel = 0,
-                    BackgroundColor3 = Library.Theme["Outline"]
-                }):AddToTheme({ BackgroundColor3 = 'Outline' })
+                    BackgroundTransparency = 1
+                })
 
-                Library:Create("UIGradient", {
+                Library:Create("UICorner", {
+                    CornerRadius = UDim.new(0, 5),
+                    Parent = Items["InactiveInline"].Instance
+                })
+
+                Items["AccentLine"] = Library:Create("Frame", {
                     Name = "\0",
-                    Parent = Items["InactiveInline"].Instance,
-                    Rotation = -90,
-                    Color = ColorSequence.new {
-                        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
-                        ColorSequenceKeypoint.new(1, Color3.fromRGB(172, 172, 172))
-                    }
+                    Parent = Items["Inactive"].Instance,
+                    AnchorPoint = Vector2.new(0, 1),
+                    Position = UDim2.new(0.1, 0, 1, 0),
+                    Size = UDim2.new(0.8, 0, 0, 2),
+                    BorderSizePixel = 0,
+                    Visible = false,
+                    BackgroundColor3 = Color3.fromRGB(147, 88, 255)
+                }):AddToTheme({ BackgroundColor3 = 'Accent' })
+
+                Library:Create("UICorner", {
+                    CornerRadius = UDim.new(0, 2),
+                    Parent = Items["AccentLine"].Instance
                 })
 
                 Items["Text"] = Library:Create("TextLabel", {
@@ -7974,7 +8008,7 @@ do
                     TextSize = Library.FontSize,
                     Parent = Items["InactiveInline"].Instance,
                     TextWrapped = true,
-                    TextColor3 = Library.Theme["Text"],
+                    TextColor3 = Library.Theme["Inactive Text"],
                     Text = Page.Name,
                     Size = UDim2.new(0, 0, 0, 15),
                     AnchorPoint = Vector2.new(0.5, 0.5),
@@ -7982,15 +8016,7 @@ do
                     BackgroundTransparency = 1,
                     Position = UDim2.new(0.5, 0, 0.5, 0),
                     AutomaticSize = Enum.AutomaticSize.X
-                }):AddToTheme({ TextColor3 = 'Text' })
-
-                Library:Create("UIStroke", {
-                    Name = "\0",
-                    Parent = Items["Inactive"].Instance,
-                    LineJoinMode = Enum.LineJoinMode.Miter,
-                    Color = Library.Theme["Border 2"],
-                    BorderOffset = UDim.new(0, 1)
-                }):AddToTheme({ Color = 'Border 2' })
+                }):AddToTheme({ TextColor3 = 'Inactive Text' })
 
                 Items["Page"] = Library:Create("Frame", {
                     Name = "\0",
@@ -8048,11 +8074,15 @@ do
                 Page.Active = Bool
 
                 if Bool then
+                    Items["Inactive"]:Tween({ BackgroundColor3 = Color3.fromRGB(36, 32, 54) })
                     Items["Text"]:ChangeItemTheme({ TextColor3 = "Accent" })
                     Items["Text"]:Tween({ TextColor3 = Library.Theme.Accent })
+                    Items["AccentLine"].Instance.Visible = true
                 else
-                    Items["Text"]:ChangeItemTheme({ TextColor3 = "Text" })
-                    Items["Text"]:Tween({ TextColor3 = Library.Theme.Text })
+                    Items["Inactive"]:Tween({ BackgroundColor3 = Color3.fromRGB(22, 23, 30) })
+                    Items["Text"]:ChangeItemTheme({ TextColor3 = "Inactive Text" })
+                    Items["Text"]:Tween({ TextColor3 = Library.Theme["Inactive Text"] })
+                    Items["AccentLine"].Instance.Visible = false
                 end
 
                 Items["Page"]:FadeDescendants(Bool, function()
@@ -8065,6 +8095,19 @@ do
                     end
                 end)
             end
+
+            Items["InactiveInline"]:Connect("MouseEnter", function()
+                if not Page.Active then
+                    Items["Inactive"]:Tween({ BackgroundColor3 = Color3.fromRGB(28, 29, 38) })
+                    Items["Text"]:Tween({ TextColor3 = Library.Theme.Text })
+                end
+            end)
+
+            Items["InactiveInline"]:Connect("MouseLeave", function()
+                if not Page.Active then
+                    Items["Inactive"]:Tween({ BackgroundColor3 = Color3.fromRGB(22, 23, 30) })
+                    Items["Text"]:Tween({ TextColor3 = Library.Theme["Inactive Text"] })
+            end)
 
             Items["InactiveInline"]:Connect("MouseButton1Down", function()
                 for Index, Value in Page.Window.Pages do
