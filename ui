@@ -1,5 +1,5 @@
 --[[
-    5/22/2026
+    2/22/2026
     Library.lua
     Purpose:
         NH ui library
@@ -8107,6 +8107,7 @@ do
                 if not Page.Active then
                     Items["Inactive"]:Tween({ BackgroundColor3 = Color3.fromRGB(22, 23, 30) })
                     Items["Text"]:Tween({ TextColor3 = Library.Theme["Inactive Text"] })
+                end
             end)
 
             Items["InactiveInline"]:Connect("MouseButton1Down", function()
