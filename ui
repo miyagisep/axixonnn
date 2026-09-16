@@ -438,6 +438,932 @@ local function CreateLoader(screenGui, onDone)
     end)
 end
 
+-- ══════════════════════════════════════════
+-- RADAR WIDGET (KraviX.CreateRadar)
+-- ══════════════════════════════════════════
+function KraviX.CreateRadar(Self, Params)
+    if typeof(Self) == "table" and not Params and (Self.Name or Self.Size or Self.Parent or Self.Range) then
+        Params = Self
+    end
+    Params = Params or {}
+    local Name = Params.Name or Params.name or "Radar ESP"
+    local Size = Params.Size or UDim2.new(0, 230, 0, 270)
+    local Pos  = Params.Position or UDim2.new(0, 50, 0, 150)
+    local ParentGui = Params.Parent or KraviX._LastScreenGui
+
+    if not ParentGui then
+        ParentGui = Instance.new("ScreenGui")
+        ParentGui.Name = "KraviX_RadarGui"
+        ParentGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
+        ParentGui.ResetOnSpawn = false
+        protect(ParentGui)
+        KraviX._LastScreenGui = ParentGui
+    end
+
+    local Radar = {
+        Entries = {},
+        Range = Params.Range or 250,
+        Visible = true,
+        SweepAngle = 0,
+        AutoSweep = Params.AutoSweep ~= false,
+    }
+
+    -- Frame Principal (Outer Container)
+    local Frame = Instance.new("Frame", ParentGui)
+    Frame.Name = "KraviX_Radar"
+    Frame.Size = Size
+    Frame.Position = Pos
+    Frame.BackgroundColor3 = C.Bg2
+    Frame.BorderSizePixel = 0
+    Frame.ZIndex = 150
+    mkCorner(Frame, 8)
+    mkStroke(Frame, C.Border, 1, 0)
+    MakeDraggable(Frame)
+    Radar.Instance = Frame
+
+    -- Glow/Sombra
+    local Shadow = Instance.new("ImageLabel", Frame)
+    Shadow.Size = UDim2.new(1, 40, 1, 40); Shadow.Position = UDim2.new(0, -20, 0, -20)
+    Shadow.BackgroundTransparency = 1; Shadow.Image = "rbxassetid://6015897843"
+    Shadow.ImageColor3 = C.Black; Shadow.ImageTransparency = 0.5; Shadow.ZIndex = 149
+    Shadow.ScaleType = Enum.ScaleType.Slice; Shadow.SliceCenter = Rect.new(49, 49, 450, 450)
+
+    -- Accent Top Line
+    local TopAcc = Instance.new("Frame", Frame)
+    TopAcc.Size = UDim2.new(1, 0, 0, 2)
+    TopAcc.BackgroundColor3 = C.Accent
+    TopAcc.BorderSizePixel = 0
+    TopAcc.ZIndex = 152
+    mkCorner(TopAcc, 2)
+
+    -- Top Header Bar
+    local Header = Instance.new("Frame", Frame)
+    Header.Size = UDim2.new(1, 0, 0, 28)
+    Header.Position = UDim2.new(0, 0, 0, 2)
+    Header.BackgroundTransparency = 1
+    Header.ZIndex = 152
+
+    local TitleLbl = Instance.new("TextLabel", Header)
+    TitleLbl.Size = UDim2.new(1, -50, 1, 0)
+    TitleLbl.Position = UDim2.new(0, 10, 0, 0)
+    TitleLbl.BackgroundTransparency = 1
+    TitleLbl.Text = Name
+    TitleLbl.TextColor3 = C.Text
+    TitleLbl.TextSize = 12
+    TitleLbl.Font = Enum.Font.GothamBold
+    TitleLbl.TextXAlignment = Enum.TextXAlignment.Left
+    TitleLbl.ZIndex = 153
+
+    -- Toggle/Close Button
+    local CloseBtn = Instance.new("TextButton", Header)
+    CloseBtn.Size = UDim2.new(0, 20, 0, 20)
+    CloseBtn.Position = UDim2.new(1, -25, 0.5, -10)
+    CloseBtn.BackgroundColor3 = C.Bg4
+    CloseBtn.Text = "×"
+    CloseBtn.TextColor3 = C.Sub
+    CloseBtn.TextSize = 14
+    CloseBtn.Font = Enum.Font.GothamBold
+    CloseBtn.ZIndex = 154
+    mkCorner(CloseBtn, 4)
+
+    CloseBtn.MouseButton1Click:Connect(function()
+        Radar:SetVisibility(false)
+    end)
+    CloseBtn.MouseEnter:Connect(function() Tween(CloseBtn, {BackgroundColor3 = C.Red, TextColor3 = C.White}, 0.1):Play() end)
+    CloseBtn.MouseLeave:Connect(function() Tween(CloseBtn, {BackgroundColor3 = C.Bg4, TextColor3 = C.Sub}, 0.1):Play() end)
+
+    -- Radar Display Container
+    local DisplayBg = Instance.new("Frame", Frame)
+    DisplayBg.Size = UDim2.new(1, -16, 1, -62)
+    DisplayBg.Position = UDim2.new(0, 8, 0, 32)
+    DisplayBg.BackgroundColor3 = C.Bg3
+    DisplayBg.BorderSizePixel = 0
+    DisplayBg.ZIndex = 151
+    DisplayBg.ClipsDescendants = true
+    mkCorner(DisplayBg, 6)
+    mkStroke(DisplayBg, C.BorderBt, 1, 0)
+
+    -- Radar Canvas (Circular / Grid area)
+    local RadarCanvas = Instance.new("Frame", DisplayBg)
+    RadarCanvas.Size = UDim2.new(1, 0, 1, 0)
+    RadarCanvas.BackgroundTransparency = 1
+    RadarCanvas.ClipsDescendants = true
+    RadarCanvas.ZIndex = 152
+
+    -- Circular Grid Lines (Concentric rings)
+    for i = 1, 3 do
+        local Ring = Instance.new("Frame", RadarCanvas)
+        local pct = i / 3
+        Ring.Size = UDim2.new(pct, 0, pct, 0)
+        Ring.AnchorPoint = Vector2.new(0.5, 0.5)
+        Ring.Position = UDim2.new(0.5, 0, 0.5, 0)
+        Ring.BackgroundTransparency = 1
+        Ring.ZIndex = 153
+        mkCorner(Ring, 999)
+        mkStroke(Ring, C.Muted2, 1, 0.4)
+    end
+
+    -- Crosshair Lines (X & Y axes)
+    local LineH = Instance.new("Frame", RadarCanvas)
+    LineH.Size = UDim2.new(1, 0, 0, 1)
+    LineH.Position = UDim2.new(0, 0, 0.5, 0)
+    LineH.BackgroundColor3 = C.Muted2
+    LineH.BackgroundTransparency = 0.5
+    LineH.BorderSizePixel = 0
+    LineH.ZIndex = 153
+
+    local LineV = Instance.new("Frame", RadarCanvas)
+    LineV.Size = UDim2.new(0, 1, 1, 0)
+    LineV.Position = UDim2.new(0.5, 0, 0, 0)
+    LineV.BackgroundColor3 = C.Muted2
+    LineV.BackgroundTransparency = 0.5
+    LineV.BorderSizePixel = 0
+    LineV.ZIndex = 153
+
+    -- Cardinal Directions (N, S, E, W)
+    local function mkCardinal(text, pos, anchor)
+        local lbl = Instance.new("TextLabel", RadarCanvas)
+        lbl.Size = UDim2.new(0, 14, 0, 14)
+        lbl.Position = pos
+        lbl.AnchorPoint = anchor
+        lbl.BackgroundTransparency = 1
+        lbl.Text = text
+        lbl.TextColor3 = text == "N" and C.Accent or C.Muted
+        lbl.TextSize = 10
+        lbl.Font = Enum.Font.GothamBold
+        lbl.ZIndex = 154
+        return lbl
+    end
+
+    mkCardinal("N", UDim2.new(0.5, 0, 0, 2), Vector2.new(0.5, 0))
+    mkCardinal("S", UDim2.new(0.5, 0, 1, -2), Vector2.new(0.5, 1))
+    mkCardinal("E", UDim2.new(1, -2, 0.5, 0), Vector2.new(1, 0.5))
+    mkCardinal("W", UDim2.new(0, 2, 0.5, 0), Vector2.new(0, 0.5))
+
+    -- Animated Sweep Line (Rotating Ray)
+    local SweepFrame = Instance.new("Frame", RadarCanvas)
+    SweepFrame.Size = UDim2.new(0.5, 0, 0.5, 0)
+    SweepFrame.AnchorPoint = Vector2.new(0, 1)
+    SweepFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+    SweepFrame.BackgroundTransparency = 1
+    SweepFrame.ZIndex = 154
+
+    local SweepLine = Instance.new("Frame", SweepFrame)
+    SweepLine.Size = UDim2.new(1, 0, 0, 2)
+    SweepLine.Position = UDim2.new(0, 0, 1, -1)
+    SweepLine.BackgroundColor3 = C.Accent
+    SweepLine.BorderSizePixel = 0
+    SweepLine.ZIndex = 155
+
+    local SweepGrad = Instance.new("UIGradient", SweepLine)
+    SweepGrad.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, C.Accent),
+        ColorSequenceKeypoint.new(1, C.Accent2)
+    })
+    SweepGrad.Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 0),
+        NumberSequenceKeypoint.new(1, 1)
+    })
+
+    -- Center Player Dot
+    local CenterDot = Instance.new("Frame", RadarCanvas)
+    CenterDot.Size = UDim2.new(0, 6, 0, 6)
+    CenterDot.AnchorPoint = Vector2.new(0.5, 0.5)
+    CenterDot.Position = UDim2.new(0.5, 0, 0.5, 0)
+    CenterDot.BackgroundColor3 = C.Accent
+    CenterDot.BorderSizePixel = 0
+    CenterDot.ZIndex = 160
+    mkCorner(CenterDot, 3)
+    mkStroke(CenterDot, C.White, 1, 0.2)
+
+    -- Footer Info Bar
+    local Footer = Instance.new("Frame", Frame)
+    Footer.Size = UDim2.new(1, -16, 0, 20)
+    Footer.Position = UDim2.new(0, 8, 1, -26)
+    Footer.BackgroundTransparency = 1
+    Footer.ZIndex = 152
+
+    local FooterLbl = Instance.new("TextLabel", Footer)
+    FooterLbl.Size = UDim2.new(1, 0, 1, 0)
+    FooterLbl.BackgroundTransparency = 1
+    FooterLbl.Text = string.format("0 contatos | %d studs", math.floor(Radar.Range))
+    FooterLbl.TextColor3 = C.Sub
+    FooterLbl.TextSize = 10
+    FooterLbl.Font = Enum.Font.Gotham
+    FooterLbl.TextXAlignment = Enum.TextXAlignment.Center
+    FooterLbl.ZIndex = 153
+
+    -- Auto-sweep animation loop
+    RunService.RenderStepped:Connect(function(dt)
+        if Radar.Visible and Radar.AutoSweep and Frame.Visible then
+            Radar.SweepAngle = (Radar.SweepAngle + dt * 120) % 360
+            SweepFrame.Rotation = Radar.SweepAngle
+        end
+    end)
+
+    -- Methods
+    function Radar:SetVisibility(bool)
+        Radar.Visible = bool
+        Frame.Visible = bool
+    end
+
+    function Radar:SetRange(val)
+        Radar.Range = math.max(1, val or 250)
+        FooterLbl.Text = string.format("%d contatos | %d studs", #Radar:GetEntries(), math.floor(Radar.Range))
+    end
+
+    function Radar:SetTitle(text)
+        TitleLbl.Text = text
+    end
+
+    function Radar:SetFooter(text)
+        FooterLbl.Text = text
+    end
+
+    function Radar:GetEntries()
+        local list = {}
+        for _, v in pairs(Radar.Entries) do table.insert(list, v) end
+        return list
+    end
+
+    function Radar:Upsert(key, data)
+        data = data or {}
+        local entry = Radar.Entries[key]
+        if not entry then
+            local blip = Instance.new("Frame", RadarCanvas)
+            blip.Size = UDim2.new(0, data.Size or 6, 0, data.Size or 6)
+            blip.AnchorPoint = Vector2.new(0.5, 0.5)
+            blip.BackgroundColor3 = data.Color or C.Accent
+            blip.BorderSizePixel = 0
+            blip.ZIndex = 158
+            mkCorner(blip, (data.Shape == "Square" and 1) or 3)
+            mkStroke(blip, C.Black, 1, 0.4)
+
+            local label = Instance.new("TextLabel", blip)
+            label.Size = UDim2.new(0, 60, 0, 12)
+            label.Position = UDim2.new(0.5, -30, 1, 2)
+            label.BackgroundTransparency = 1
+            label.Text = data.Label or ""
+            label.TextColor3 = C.Text
+            label.TextSize = 9
+            label.Font = Enum.Font.Gotham
+            label.TextXAlignment = Enum.TextXAlignment.Center
+            label.Visible = (data.Label ~= nil and data.Label ~= "")
+
+            entry = { Instance = blip, LabelInstance = label, Color = data.Color or C.Accent }
+            Radar.Entries[key] = entry
+        end
+
+        if data.Color then
+            entry.Instance.BackgroundColor3 = data.Color
+            entry.Color = data.Color
+        end
+
+        if data.Label then
+            entry.LabelInstance.Text = data.Label
+            entry.LabelInstance.Visible = (data.Label ~= "")
+        end
+
+        -- Calculate relative offset
+        local pos = data.Position
+        if typeof(pos) == "Vector3" then
+            local localChar = LocalPlayer and LocalPlayer.Character
+            local root = localChar and localChar:FindFirstChild("HumanoidRootPart")
+            if root then
+                local rel = root.CFrame:PointToObjectSpace(pos)
+                local maxR = RadarCanvas.AbsoluteSize.X / 2 - 8
+                local nx = (rel.X / Radar.Range) * maxR
+                local ny = (rel.Z / Radar.Range) * maxR
+                local dist = math.sqrt(nx*nx + ny*ny)
+                if dist > maxR then
+                    nx = (nx / dist) * maxR
+                    ny = (ny / dist) * maxR
+                end
+                entry.Instance.Position = UDim2.new(0.5, nx, 0.5, ny)
+            end
+        elseif typeof(pos) == "Vector2" or typeof(pos) == "UDim2" then
+            entry.Instance.Position = (typeof(pos) == "UDim2" and pos) or UDim2.new(0.5, pos.X, 0.5, pos.Y)
+        end
+
+        FooterLbl.Text = string.format("%d contatos | %d studs", #Radar:GetEntries(), math.floor(Radar.Range))
+    end
+
+    function Radar:Remove(key)
+        local entry = Radar.Entries[key]
+        if entry then
+            if entry.Instance then entry.Instance:Destroy() end
+            Radar.Entries[key] = nil
+            FooterLbl.Text = string.format("%d contatos | %d studs", #Radar:GetEntries(), math.floor(Radar.Range))
+        end
+    end
+
+    function Radar:Clear()
+        for key, entry in pairs(Radar.Entries) do
+            if entry.Instance then entry.Instance:Destroy() end
+        end
+        Radar.Entries = {}
+        FooterLbl.Text = string.format("0 contatos | %d studs", math.floor(Radar.Range))
+    end
+
+    return Radar
+end
+
+-- ══════════════════════════════════════════
+-- CONSOLE LOGGER WIDGET (KraviX.CreateConsole)
+-- ══════════════════════════════════════════
+function KraviX.CreateConsole(Self, Params)
+    if typeof(Self) == "table" and not Params and (Self.Name or Self.Size or Self.Parent or Self.Callback) then
+        Params = Self
+    end
+    Params = Params or {}
+    local Name = Params.Name or Params.name or "Developer Console"
+    local Size = Params.Size or UDim2.new(0, 480, 0, 260)
+    local Pos  = Params.Position or UDim2.new(0, 300, 0, 150)
+    local ParentGui = Params.Parent or KraviX._LastScreenGui
+
+    if not ParentGui then
+        ParentGui = Instance.new("ScreenGui")
+        ParentGui.Name = "KraviX_ConsoleGui"
+        ParentGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
+        ParentGui.ResetOnSpawn = false
+        protect(ParentGui)
+        KraviX._LastScreenGui = ParentGui
+    end
+
+    local Console = {
+        Logs = {},
+        Filter = "ALL",
+        Visible = true,
+        Callback = Params.Callback or Params.callback or function() end
+    }
+
+    -- Frame Principal
+    local Frame = Instance.new("Frame", ParentGui)
+    Frame.Name = "KraviX_Console"
+    Frame.Size = Size
+    Frame.Position = Pos
+    Frame.BackgroundColor3 = C.Bg2
+    Frame.BorderSizePixel = 0
+    Frame.ZIndex = 150
+    mkCorner(Frame, 8)
+    mkStroke(Frame, C.Border, 1, 0)
+    MakeDraggable(Frame)
+    Console.Instance = Frame
+
+    -- Glow/Sombra
+    local Shadow = Instance.new("ImageLabel", Frame)
+    Shadow.Size = UDim2.new(1, 40, 1, 40); Shadow.Position = UDim2.new(0, -20, 0, -20)
+    Shadow.BackgroundTransparency = 1; Shadow.Image = "rbxassetid://6015897843"
+    Shadow.ImageColor3 = C.Black; Shadow.ImageTransparency = 0.5; Shadow.ZIndex = 149
+    Shadow.ScaleType = Enum.ScaleType.Slice; Shadow.SliceCenter = Rect.new(49, 49, 450, 450)
+
+    -- Accent Top Line
+    local TopAcc = Instance.new("Frame", Frame)
+    TopAcc.Size = UDim2.new(1, 0, 0, 2)
+    TopAcc.BackgroundColor3 = C.Accent
+    TopAcc.BorderSizePixel = 0
+    TopAcc.ZIndex = 152
+    mkCorner(TopAcc, 2)
+
+    -- Header Bar
+    local Header = Instance.new("Frame", Frame)
+    Header.Size = UDim2.new(1, 0, 0, 30)
+    Header.Position = UDim2.new(0, 0, 0, 2)
+    Header.BackgroundTransparency = 1
+    Header.ZIndex = 152
+
+    local TitleLbl = Instance.new("TextLabel", Header)
+    TitleLbl.Size = UDim2.new(0, 130, 1, 0)
+    TitleLbl.Position = UDim2.new(0, 10, 0, 0)
+    TitleLbl.BackgroundTransparency = 1
+    TitleLbl.Text = Name
+    TitleLbl.TextColor3 = C.Text
+    TitleLbl.TextSize = 12
+    TitleLbl.Font = Enum.Font.GothamBold
+    TitleLbl.TextXAlignment = Enum.TextXAlignment.Left
+    TitleLbl.ZIndex = 153
+
+    -- Badge Count
+    local Badge = Instance.new("Frame", Header)
+    Badge.Size = UDim2.new(0, 45, 0, 16)
+    Badge.Position = UDim2.new(0, 140, 0.5, -8)
+    Badge.BackgroundColor3 = C.Bg4
+    Badge.ZIndex = 153
+    mkCorner(Badge, 4)
+
+    local BadgeLbl = Instance.new("TextLabel", Badge)
+    BadgeLbl.Size = UDim2.new(1, 0, 1, 0)
+    BadgeLbl.BackgroundTransparency = 1
+    BadgeLbl.Text = "0 logs"
+    BadgeLbl.TextColor3 = C.Sub
+    BadgeLbl.TextSize = 9
+    BadgeLbl.Font = Enum.Font.Gotham
+    BadgeLbl.ZIndex = 154
+
+    -- Header Actions
+    local ActionLayout = Instance.new("UIListLayout", Header)
+    ActionLayout.FillDirection = Enum.FillDirection.Horizontal
+    ActionLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
+    ActionLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+    ActionLayout.Padding = UDim.new(0, 6)
+    mkPad(Header, 0, 0, 0, 10)
+
+    local function mkHeaderBtn(txt, callback)
+        local btn = Instance.new("TextButton", Header)
+        btn.Size = UDim2.new(0, 48, 0, 20)
+        btn.BackgroundColor3 = C.Bg4
+        btn.Text = txt
+        btn.TextColor3 = C.Sub
+        btn.TextSize = 10
+        btn.Font = Enum.Font.GothamBold
+        btn.ZIndex = 154
+        mkCorner(btn, 4)
+        btn.MouseEnter:Connect(function() Tween(btn, {BackgroundColor3 = C.Bg5, TextColor3 = C.White}, 0.1):Play() end)
+        btn.MouseLeave:Connect(function() Tween(btn, {BackgroundColor3 = C.Bg4, TextColor3 = C.Sub}, 0.1):Play() end)
+        btn.MouseButton1Click:Connect(callback)
+        return btn
+    end
+
+    mkHeaderBtn("Limpar", function() Console:Clear() end)
+
+    local CloseBtn = Instance.new("TextButton", Header)
+    CloseBtn.Size = UDim2.new(0, 20, 0, 20)
+    CloseBtn.BackgroundColor3 = C.Bg4
+    CloseBtn.Text = "×"
+    CloseBtn.TextColor3 = C.Sub
+    CloseBtn.TextSize = 14
+    CloseBtn.Font = Enum.Font.GothamBold
+    CloseBtn.ZIndex = 154
+    mkCorner(CloseBtn, 4)
+    CloseBtn.MouseButton1Click:Connect(function() Console:SetVisibility(false) end)
+    CloseBtn.MouseEnter:Connect(function() Tween(CloseBtn, {BackgroundColor3 = C.Red, TextColor3 = C.White}, 0.1):Play() end)
+    CloseBtn.MouseLeave:Connect(function() Tween(CloseBtn, {BackgroundColor3 = C.Bg4, TextColor3 = C.Sub}, 0.1):Play() end)
+
+    -- Log Scroll Box
+    local ScrollBox = Instance.new("ScrollingFrame", Frame)
+    ScrollBox.Size = UDim2.new(1, -16, 1, -72)
+    ScrollBox.Position = UDim2.new(0, 8, 0, 34)
+    ScrollBox.BackgroundColor3 = C.Bg3
+    ScrollBox.BorderSizePixel = 0
+    ScrollBox.ZIndex = 151
+    ScrollBox.ScrollBarThickness = 4
+    ScrollBox.ScrollBarImageColor3 = C.Accent
+    ScrollBox.CanvasSize = UDim2.new(0, 0, 0, 0)
+    ScrollBox.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    mkCorner(ScrollBox, 6)
+    mkStroke(ScrollBox, C.BorderBt, 1, 0)
+
+    local LogList = Instance.new("UIListLayout", ScrollBox)
+    LogList.SortOrder = Enum.SortOrder.LayoutOrder
+    LogList.Padding = UDim.new(0, 2)
+    mkPad(ScrollBox, 6, 6, 8, 8)
+
+    -- Command Prompt Bar (Bottom)
+    local CommandBoxFrame = Instance.new("Frame", Frame)
+    CommandBoxFrame.Size = UDim2.new(1, -16, 0, 26)
+    CommandBoxFrame.Position = UDim2.new(0, 8, 1, -32)
+    CommandBoxFrame.BackgroundColor3 = C.Bg3
+    CommandBoxFrame.BorderSizePixel = 0
+    CommandBoxFrame.ZIndex = 151
+    mkCorner(CommandBoxFrame, 6)
+    mkStroke(CommandBoxFrame, C.BorderBt, 1, 0)
+
+    local PromptSymbol = Instance.new("TextLabel", CommandBoxFrame)
+    PromptSymbol.Size = UDim2.new(0, 20, 1, 0)
+    PromptSymbol.BackgroundTransparency = 1
+    PromptSymbol.Text = " >"
+    PromptSymbol.TextColor3 = C.Accent
+    PromptSymbol.TextSize = 12
+    PromptSymbol.Font = Enum.Font.Code
+    PromptSymbol.ZIndex = 153
+
+    local InputBox = Instance.new("TextBox", CommandBoxFrame)
+    InputBox.Size = UDim2.new(1, -25, 1, 0)
+    InputBox.Position = UDim2.new(0, 20, 0, 0)
+    InputBox.BackgroundTransparency = 1
+    InputBox.PlaceholderText = "Digite um comando..."
+    InputBox.PlaceholderColor3 = C.Muted
+    InputBox.Text = ""
+    InputBox.TextColor3 = C.White
+    InputBox.TextSize = 11
+    InputBox.Font = Enum.Font.Code
+    InputBox.TextXAlignment = Enum.TextXAlignment.Left
+    InputBox.ClearTextOnFocus = false
+    InputBox.ZIndex = 153
+
+    InputBox.FocusLost:Connect(function(enterPressed)
+        if enterPressed and InputBox.Text ~= "" then
+            local cmd = InputBox.Text
+            InputBox.Text = ""
+            Console:Log(cmd, "exec")
+            pcall(Console.Callback, cmd)
+        end
+    end)
+
+    -- Methods
+    function Console:SetVisibility(bool)
+        Console.Visible = bool
+        Frame.Visible = bool
+    end
+
+    function Console:SetTitle(text)
+        TitleLbl.Text = text
+    end
+
+    function Console:Clear()
+        for _, item in ipairs(ScrollBox:GetChildren()) do
+            if item:IsA("Frame") then item:Destroy() end
+        end
+        Console.Logs = {}
+        BadgeLbl.Text = "0 logs"
+    end
+
+    function Console:Log(text, tag)
+        tag = tag or "info"
+        local timeStr = os.date("%H:%M:%S")
+        local tagText = "[INFO]"
+        local tagCol  = C.Accent
+
+        if tag == "warn" then
+            tagText = "[WARN]"; tagCol = Color3.fromRGB(245, 158, 11)
+        elseif tag == "error" then
+            tagText = "[ERR]";  tagCol = C.Red
+        elseif tag == "success" then
+            tagText = "[OK]";   tagCol = C.Green
+        elseif tag == "exec" then
+            tagText = "[EXEC]"; tagCol = Color3.fromRGB(56, 189, 248)
+        elseif typeof(tag) == "Color3" then
+            tagText = "[LOG]";  tagCol = tag
+        end
+
+        local Row = Instance.new("Frame", ScrollBox)
+        Row.Size = UDim2.new(1, 0, 0, 0)
+        Row.AutomaticSize = Enum.AutomaticSize.Y
+        Row.BackgroundTransparency = 1
+        Row.ZIndex = 152
+
+        local Layout = Instance.new("UIListLayout", Row)
+        Layout.FillDirection = Enum.FillDirection.Horizontal
+        Layout.VerticalAlignment = Enum.VerticalAlignment.Top
+        Layout.Padding = UDim.new(0, 6)
+
+        local TimeLbl = Instance.new("TextLabel", Row)
+        TimeLbl.Size = UDim2.new(0, 52, 0, 16)
+        TimeLbl.BackgroundTransparency = 1
+        TimeLbl.Text = string.format("[%s]", timeStr)
+        TimeLbl.TextColor3 = C.Muted
+        TimeLbl.TextSize = 10
+        TimeLbl.Font = Enum.Font.Code
+        TimeLbl.ZIndex = 153
+
+        local TagLbl = Instance.new("TextLabel", Row)
+        TagLbl.Size = UDim2.new(0, 42, 0, 16)
+        TagLbl.BackgroundTransparency = 1
+        TagLbl.Text = tagText
+        TagLbl.TextColor3 = tagCol
+        TagLbl.TextSize = 10
+        TagLbl.Font = Enum.Font.Code
+        TagLbl.ZIndex = 153
+
+        local MsgLbl = Instance.new("TextLabel", Row)
+        MsgLbl.Size = UDim2.new(1, -106, 0, 0)
+        MsgLbl.AutomaticSize = Enum.AutomaticSize.Y
+        MsgLbl.BackgroundTransparency = 1
+        MsgLbl.Text = tostring(text)
+        MsgLbl.TextColor3 = C.Text
+        MsgLbl.TextSize = 11
+        MsgLbl.Font = Enum.Font.Code
+        MsgLbl.TextXAlignment = Enum.TextXAlignment.Left
+        MsgLbl.TextWrapped = true
+        MsgLbl.ZIndex = 153
+
+        table.insert(Console.Logs, { Text = text, Tag = tag, Time = timeStr })
+        BadgeLbl.Text = string.format("%d logs", #Console.Logs)
+
+        task.defer(function()
+            ScrollBox.CanvasPosition = Vector2.new(0, 99999)
+        end)
+    end
+
+    function Console:Warn(text)
+        Console:Log(text, "warn")
+    end
+
+    function Console:Error(text)
+        Console:Log(text, "error")
+    end
+
+    function Console:Success(text)
+        Console:Log(text, "success")
+    end
+
+    return Console
+end
+
+-- ══════════════════════════════════════════
+-- ESP PREVIEW WIDGET (KraviX.CreateESPPreview)
+-- ══════════════════════════════════════════
+function KraviX.CreateESPPreview(Self, Params)
+    if typeof(Self) == "table" and not Params and (Self.Name or Self.Size or Self.Parent or Self.Config) then
+        Params = Self
+    end
+    Params = Params or {}
+    local Name = Params.Name or Params.name or "ESP Visuals Preview"
+    local Size = Params.Size or UDim2.new(0, 260, 0, 340)
+    local Pos  = Params.Position or UDim2.new(0, 800, 0, 150)
+    local ParentGui = Params.Parent or KraviX._LastScreenGui
+
+    if not ParentGui then
+        ParentGui = Instance.new("ScreenGui")
+        ParentGui.Name = "KraviX_ESPPreviewGui"
+        ParentGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
+        ParentGui.ResetOnSpawn = false
+        protect(ParentGui)
+        KraviX._LastScreenGui = ParentGui
+    end
+
+    local Preview = {
+        Visible = true,
+        Config = {
+            Box = true,
+            BoxColor = C.Accent,
+            Name = true,
+            NameText = "Dummy Player",
+            Health = true,
+            HealthPercent = 85,
+            Distance = true,
+            DistanceText = "45 studs",
+            Weapon = true,
+            WeaponText = "[AK-47]",
+            Skeleton = false,
+            Tracers = false,
+            Chams = true,
+            ChamsColor = C.Accent2
+        }
+    }
+
+    if Params.Config then
+        for k, v in pairs(Params.Config) do Preview.Config[k] = v end
+    end
+
+    -- Frame Principal
+    local Frame = Instance.new("Frame", ParentGui)
+    Frame.Name = "KraviX_ESPPreview"
+    Frame.Size = Size
+    Frame.Position = Pos
+    Frame.BackgroundColor3 = C.Bg2
+    Frame.BorderSizePixel = 0
+    Frame.ZIndex = 150
+    mkCorner(Frame, 8)
+    mkStroke(Frame, C.Border, 1, 0)
+    MakeDraggable(Frame)
+    Preview.Instance = Frame
+
+    -- Glow/Sombra
+    local Shadow = Instance.new("ImageLabel", Frame)
+    Shadow.Size = UDim2.new(1, 40, 1, 40); Shadow.Position = UDim2.new(0, -20, 0, -20)
+    Shadow.BackgroundTransparency = 1; Shadow.Image = "rbxassetid://6015897843"
+    Shadow.ImageColor3 = C.Black; Shadow.ImageTransparency = 0.5; Shadow.ZIndex = 149
+    Shadow.ScaleType = Enum.ScaleType.Slice; Shadow.SliceCenter = Rect.new(49, 49, 450, 450)
+
+    -- Top Accent Line
+    local TopAcc = Instance.new("Frame", Frame)
+    TopAcc.Size = UDim2.new(1, 0, 0, 2)
+    TopAcc.BackgroundColor3 = C.Accent
+    TopAcc.BorderSizePixel = 0
+    TopAcc.ZIndex = 152
+    mkCorner(TopAcc, 2)
+
+    -- Header
+    local Header = Instance.new("Frame", Frame)
+    Header.Size = UDim2.new(1, 0, 0, 28)
+    Header.Position = UDim2.new(0, 0, 0, 2)
+    Header.BackgroundTransparency = 1
+    Header.ZIndex = 152
+
+    local TitleLbl = Instance.new("TextLabel", Header)
+    TitleLbl.Size = UDim2.new(1, -50, 1, 0)
+    TitleLbl.Position = UDim2.new(0, 10, 0, 0)
+    TitleLbl.BackgroundTransparency = 1
+    TitleLbl.Text = Name
+    TitleLbl.TextColor3 = C.Text
+    TitleLbl.TextSize = 12
+    TitleLbl.Font = Enum.Font.GothamBold
+    TitleLbl.TextXAlignment = Enum.TextXAlignment.Left
+    TitleLbl.ZIndex = 153
+
+    local CloseBtn = Instance.new("TextButton", Header)
+    CloseBtn.Size = UDim2.new(0, 20, 0, 20)
+    CloseBtn.Position = UDim2.new(1, -25, 0.5, -10)
+    CloseBtn.BackgroundColor3 = C.Bg4
+    CloseBtn.Text = "×"
+    CloseBtn.TextColor3 = C.Sub
+    CloseBtn.TextSize = 14
+    CloseBtn.Font = Enum.Font.GothamBold
+    CloseBtn.ZIndex = 154
+    mkCorner(CloseBtn, 4)
+    CloseBtn.MouseButton1Click:Connect(function() Preview:SetVisibility(false) end)
+    CloseBtn.MouseEnter:Connect(function() Tween(CloseBtn, {BackgroundColor3 = C.Red, TextColor3 = C.White}, 0.1):Play() end)
+    CloseBtn.MouseLeave:Connect(function() Tween(CloseBtn, {BackgroundColor3 = C.Bg4, TextColor3 = C.Sub}, 0.1):Play() end)
+
+    -- Display Canvas Container
+    local DisplayContainer = Instance.new("Frame", Frame)
+    DisplayContainer.Size = UDim2.new(1, -16, 1, -38)
+    DisplayContainer.Position = UDim2.new(0, 8, 0, 30)
+    DisplayContainer.BackgroundColor3 = C.Bg3
+    DisplayContainer.BorderSizePixel = 0
+    DisplayContainer.ZIndex = 151
+    DisplayContainer.ClipsDescendants = true
+    mkCorner(DisplayContainer, 6)
+    mkStroke(DisplayContainer, C.BorderBt, 1, 0)
+
+    -- Viewport Frame for 3D Character Mannequin
+    local Viewport = Instance.new("ViewportFrame", DisplayContainer)
+    Viewport.Size = UDim2.new(1, 0, 1, 0)
+    Viewport.BackgroundTransparency = 1
+    Viewport.BorderSizePixel = 0
+    Viewport.ZIndex = 152
+
+    local ViewportCam = Instance.new("Camera")
+    ViewportCam.FieldOfView = 50
+    Viewport.CurrentCamera = ViewportCam
+    ViewportCam.Parent = Viewport
+
+    -- Build Mannequin Model in Viewport
+    local DummyWorld = Instance.new("WorldModel", Viewport)
+
+    local function createPart(name, size, cf, col)
+        local p = Instance.new("Part", DummyWorld)
+        p.Name = name
+        p.Size = size
+        p.CFrame = cf
+        p.Color = col or Color3.fromRGB(160, 160, 175)
+        p.Material = Enum.Material.SmoothPlastic
+        p.Anchored = true
+        p.CanCollide = false
+        return p
+    end
+
+    local Head   = createPart("Head", Vector3.new(1.2, 1.2, 1.2), CFrame.new(0, 2.2, 0), Color3.fromRGB(220, 220, 230))
+    local Torso  = createPart("UpperTorso", Vector3.new(2, 2, 1), CFrame.new(0, 0.5, 0))
+    local LArm   = createPart("LeftUpperArm", Vector3.new(0.8, 2, 0.8), CFrame.new(-1.5, 0.5, 0))
+    local RArm   = createPart("RightUpperArm", Vector3.new(0.8, 2, 0.8), CFrame.new(1.5, 0.5, 0))
+    local LLeg   = createPart("LeftUpperLeg", Vector3.new(0.9, 2, 0.9), CFrame.new(-0.55, -1.6, 0))
+    local RLeg   = createPart("RightUpperLeg", Vector3.new(0.9, 2, 0.9), CFrame.new(0.55, -1.6, 0))
+
+    -- Camera Orbit Parameters
+    local rotAngle = 0
+    ViewportCam.CFrame = CFrame.new(0, 0.2, 7.5) * CFrame.Angles(0, 0, 0)
+
+    -- 2D Overlay Canvas over Viewport
+    local OverlayCanvas = Instance.new("Frame", DisplayContainer)
+    OverlayCanvas.Size = UDim2.new(1, 0, 1, 0)
+    OverlayCanvas.BackgroundTransparency = 1
+    OverlayCanvas.ZIndex = 160
+
+    -- Bounding Box Frame
+    local BoxFrame = Instance.new("Frame", OverlayCanvas)
+    BoxFrame.Size = UDim2.new(0, 120, 0, 210)
+    BoxFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+    BoxFrame.Position = UDim2.new(0.5, 0, 0.5, 5)
+    BoxFrame.BackgroundTransparency = 1
+    BoxFrame.ZIndex = 161
+    local BoxStroke = mkStroke(BoxFrame, Preview.Config.BoxColor, 1.5, 0)
+
+    -- Health Bar
+    local HealthBarBg = Instance.new("Frame", BoxFrame)
+    HealthBarBg.Size = UDim2.new(0, 3, 1, 0)
+    HealthBarBg.Position = UDim2.new(0, -6, 0, 0)
+    HealthBarBg.BackgroundColor3 = C.Black
+    HealthBarBg.BorderSizePixel = 0
+    HealthBarBg.ZIndex = 162
+    mkCorner(HealthBarBg, 2)
+
+    local HealthBarFill = Instance.new("Frame", HealthBarBg)
+    HealthBarFill.Size = UDim2.new(1, 0, Preview.Config.HealthPercent / 100, 0)
+    HealthBarFill.AnchorPoint = Vector2.new(0, 1)
+    HealthBarFill.Position = UDim2.new(0, 0, 1, 0)
+    HealthBarFill.BackgroundColor3 = C.Green
+    HealthBarFill.BorderSizePixel = 0
+    HealthBarFill.ZIndex = 163
+    mkCorner(HealthBarFill, 2)
+
+    local HealthTxt = Instance.new("TextLabel", HealthBarBg)
+    HealthTxt.Size = UDim2.new(0, 30, 0, 12)
+    HealthTxt.Position = UDim2.new(0, -32, 1 - Preview.Config.HealthPercent / 100, -6)
+    HealthTxt.BackgroundTransparency = 1
+    HealthTxt.Text = tostring(Preview.Config.HealthPercent) .. "%"
+    HealthTxt.TextColor3 = C.Green
+    HealthTxt.TextSize = 9
+    HealthTxt.Font = Enum.Font.GothamBold
+    HealthTxt.ZIndex = 164
+
+    -- Name Tag
+    local NameTag = Instance.new("TextLabel", BoxFrame)
+    NameTag.Size = UDim2.new(1, 40, 0, 14)
+    NameTag.Position = UDim2.new(0.5, -20, 0, -18)
+    NameTag.AnchorPoint = Vector2.new(0.5, 0)
+    NameTag.BackgroundTransparency = 1
+    NameTag.Text = Preview.Config.NameText
+    NameTag.TextColor3 = C.White
+    NameTag.TextSize = 10
+    NameTag.Font = Enum.Font.GothamBold
+    NameTag.ZIndex = 164
+
+    -- Distance Tag
+    local DistTag = Instance.new("TextLabel", BoxFrame)
+    DistTag.Size = UDim2.new(1, 40, 0, 12)
+    DistTag.Position = UDim2.new(0.5, -20, 1, 3)
+    DistTag.AnchorPoint = Vector2.new(0.5, 0)
+    DistTag.BackgroundTransparency = 1
+    DistTag.Text = Preview.Config.DistanceText
+    DistTag.TextColor3 = C.Sub
+    DistTag.TextSize = 9
+    DistTag.Font = Enum.Font.Gotham
+    DistTag.ZIndex = 164
+
+    -- Weapon Tag
+    local WeaponTag = Instance.new("TextLabel", BoxFrame)
+    WeaponTag.Size = UDim2.new(1, 40, 0, 12)
+    WeaponTag.Position = UDim2.new(0.5, -20, 1, 16)
+    WeaponTag.AnchorPoint = Vector2.new(0.5, 0)
+    WeaponTag.BackgroundTransparency = 1
+    WeaponTag.Text = Preview.Config.WeaponText
+    WeaponTag.TextColor3 = C.Accent
+    WeaponTag.TextSize = 9
+    WeaponTag.Font = Enum.Font.GothamBold
+    WeaponTag.ZIndex = 164
+
+    -- Chams Highlight effect on dummy parts
+    local function applyChams(col)
+        for _, part in ipairs(DummyWorld:GetChildren()) do
+            if part:IsA("BasePart") then
+                part.Color = col or C.Accent2
+                part.Material = Enum.Material.Neon
+            end
+        end
+    end
+
+    local function removeChams()
+        Head.Color = Color3.fromRGB(220, 220, 230); Head.Material = Enum.Material.SmoothPlastic
+        Torso.Color = Color3.fromRGB(160, 160, 175); Torso.Material = Enum.Material.SmoothPlastic
+        LArm.Color = Color3.fromRGB(160, 160, 175); LArm.Material = Enum.Material.SmoothPlastic
+        RArm.Color = Color3.fromRGB(160, 160, 175); RArm.Material = Enum.Material.SmoothPlastic
+        LLeg.Color = Color3.fromRGB(160, 160, 175); LLeg.Material = Enum.Material.SmoothPlastic
+        RLeg.Color = Color3.fromRGB(160, 160, 175); RLeg.Material = Enum.Material.SmoothPlastic
+    end
+
+    if Preview.Config.Chams then applyChams(Preview.Config.ChamsColor) else removeChams() end
+
+    -- Continuous 3D rotation animation
+    RunService.RenderStepped:Connect(function(dt)
+        if Preview.Visible and Frame.Visible then
+            rotAngle = (rotAngle + dt * 40) % 360
+            local rad = math.rad(rotAngle)
+            local dist = 7.5
+            ViewportCam.CFrame = CFrame.new(math.sin(rad) * dist, 0.2, math.cos(rad) * dist) * CFrame.Angles(0, rad, 0)
+        end
+    end)
+
+    -- Methods
+    function Preview:SetVisibility(bool)
+        Preview.Visible = bool
+        Frame.Visible = bool
+    end
+
+    function Preview:SetText(text)
+        TitleLbl.Text = text
+    end
+
+    function Preview:UpdateConfig(cfg)
+        for k, v in pairs(cfg) do Preview.Config[k] = v end
+
+        BoxFrame.Visible = Preview.Config.Box ~= false
+        if BoxStroke then BoxStroke.Color = Preview.Config.BoxColor or C.Accent end
+
+        NameTag.Visible = Preview.Config.Name ~= false
+        if Preview.Config.NameText then NameTag.Text = Preview.Config.NameText end
+
+        HealthBarBg.Visible = Preview.Config.Health ~= false
+        HealthBarFill.Size = UDim2.new(1, 0, (Preview.Config.HealthPercent or 100) / 100, 0)
+        HealthTxt.Text = tostring(Preview.Config.HealthPercent or 100) .. "%"
+
+        DistTag.Visible = Preview.Config.Distance ~= false
+        if Preview.Config.DistanceText then DistTag.Text = Preview.Config.DistanceText end
+
+        WeaponTag.Visible = Preview.Config.Weapon ~= false
+        if Preview.Config.WeaponText then WeaponTag.Text = Preview.Config.WeaponText end
+
+        if Preview.Config.Chams then
+            applyChams(Preview.Config.ChamsColor or C.Accent2)
+        else
+            removeChams()
+        end
+    end
+
+    return Preview
+end
+
 
 -- ══════════════════════════════════════════
 -- JANELA PRINCIPAL
@@ -476,6 +1402,28 @@ function KraviX:CreateWindow(config)
     ScreenGui.ResetOnSpawn = false; ScreenGui.IgnoreGuiInset = true
     protect(ScreenGui)
     Window._ScreenGui = ScreenGui
+
+    -- Window Add Widgets Helpers
+    function Window:AddRadar(params)
+        params = params or {}
+        params.Parent = ScreenGui
+        local radar = KraviX.CreateRadar(params)
+        return radar
+    end
+
+    function Window:AddConsole(params)
+        params = params or {}
+        params.Parent = ScreenGui
+        local console = KraviX.CreateConsole(params)
+        return console
+    end
+
+    function Window:AddESPPreview(params)
+        params = params or {}
+        params.Parent = ScreenGui
+        local preview = KraviX.CreateESPPreview(params)
+        return preview
+    end
 
     -- Backdrop
     local Backdrop = Instance.new("Frame", ScreenGui)
