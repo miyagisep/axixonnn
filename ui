@@ -1,5 +1,5 @@
 --[[
-    3/22/2026
+    4/22/2026
     Library.lua
     Purpose:
         NH ui library
@@ -8076,6 +8076,15 @@ do
                 Page:Turn(true)
             end
 
+            Page.AddSection = function(P, Params, Side)
+                if type(Params) == "string" then Params = { Name = Params, Side = Side or 1 } end
+                return P:Section(Params)
+            end
+            Page.AddSubTab = function(P, Params)
+                if type(Params) == "string" then Params = { Name = Params } end
+                return P:SubPage(Params)
+            end
+
             table.insert(Page.Window.Pages, Page)
             return setmetatable(Page, Library)
         end
@@ -8237,6 +8246,19 @@ do
         Library.Section = function(Self, Params)
             Params = Params or {}
 
+            if type(Params) == "string" then
+                Params = { Name = Params }
+            end
+
+            -- If called on a Page without ColumnsData, auto-route to a SubPage
+            if not Self.ColumnsData then
+                if Self.SubPages and #Self.SubPages > 0 then
+                    Self = Self.SubPages[1]
+                elseif Self.SubPage then
+                    Self = Self:SubPage({ Name = "Main" })
+                end
+            end
+
             local Section = {
                 Name = Params.Name or Params.name or "Section",
                 Side = Params.Side or Params.side or 1,
@@ -8245,6 +8267,36 @@ do
                 Page = Self,
                 Items = {},
             }
+
+            -- Attach backward compatibility method aliases onto Section
+            Section.AddToggle = function(S, P)
+                if type(P) == "string" then P = { Name = P } end
+                return S:Toggle(P)
+            end
+            Section.AddSlider = function(S, P)
+                if type(P) == "string" then P = { Name = P } end
+                return S:Slider(P)
+            end
+            Section.AddDropdown = function(S, P)
+                if type(P) == "string" then P = { Name = P } end
+                return S:Dropdown(P)
+            end
+            Section.AddButton = function(S, P)
+                if type(P) == "string" then P = { Name = P } end
+                return S:Button(P)
+            end
+            Section.AddColorPicker = function(S, P)
+                if type(P) == "string" then P = { Name = P } end
+                return S:Colorpicker(P)
+            end
+            Section.AddKeybind = function(S, P)
+                if type(P) == "string" then P = { Name = P } end
+                return S:Keybind(P)
+            end
+            Section.AddTextbox = function(S, P)
+                if type(P) == "string" then P = { Name = P } end
+                return S:Textbox(P)
+            end
 
             local Items = {}
             do
