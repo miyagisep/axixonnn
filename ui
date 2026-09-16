@@ -1,5 +1,5 @@
 --[[
-    2/22/2026
+    3/22/2026
     Library.lua
     Purpose:
         NH ui library
@@ -10672,6 +10672,95 @@ do
     end
 end
 
+
+-- Compatibility Adapters for Window and Page objects
+local OriginalWindow = Library.Window
+Library.Window = function(Self, Params)
+    local Win = OriginalWindow(Self, Params)
+
+    Win.AddTab = function(W, TabParams)
+        if type(TabParams) == "string" then TabParams = { Name = TabParams } end
+        local Page = Win:Page(TabParams)
+
+        Page.AddSubTab = function(P, SubParams)
+            if type(SubParams) == "string" then SubParams = { Name = SubParams } end
+            return P:SubPage(SubParams)
+        end
+
+        Page.AddSection = function(P, SecParams, Side)
+            if type(SecParams) == "string" then
+                SecParams = { Name = SecParams, Side = Side or 1 }
+            end
+            local Sub = P.SubPages and P.SubPages[1]
+            if not Sub then
+                Sub = P:SubPage({ Name = "Main" })
+            end
+            local Sec = Sub:Section(SecParams)
+
+            Sec.AddToggle = function(S, TgbParams)
+                if type(TgbParams) == "table" and TgbParams.Name then
+                    return S:Toggle(TgbParams)
+                end
+            end
+            Sec.AddSlider = function(S, SldParams)
+                if type(SldParams) == "table" and SldParams.Name then
+                    return S:Slider(SldParams)
+                end
+            end
+            Sec.AddDropdown = function(S, DrpParams)
+                if type(DrpParams) == "table" and DrpParams.Name then
+                    return S:Dropdown(DrpParams)
+                end
+            end
+            Sec.AddButton = function(S, BtnParams)
+                if type(BtnParams) == "table" and BtnParams.Name then
+                    return S:Button(BtnParams)
+                end
+            end
+            Sec.AddColorPicker = function(S, ClrParams)
+                if type(ClrParams) == "table" and ClrParams.Name then
+                    return S:Colorpicker(ClrParams)
+                end
+            end
+            Sec.AddKeybind = function(S, KbdParams)
+                if type(KbdParams) == "table" and KbdParams.Name then
+                    return S:Keybind(KbdParams)
+                end
+            end
+            Sec.AddTextbox = function(S, TxbParams)
+                if type(TxbParams) == "table" and TxbParams.Name then
+                    return S:Textbox(TxbParams)
+                end
+            end
+
+            return Sec
+        end
+
+        return Page
+    end
+
+    Win.NotifySuccess = function(W, Title, Msg, Duration)
+        return Library:Notification({ Title = Title, Content = Msg, Duration = Duration })
+    end
+    Win.NotifyError = function(W, Title, Msg, Duration)
+        return Library:Notification({ Title = Title, Content = Msg, Duration = Duration })
+    end
+    Win.NotifyInfo = function(W, Title, Msg, Duration)
+        return Library:Notification({ Title = Title, Content = Msg, Duration = Duration })
+    end
+
+    Win.AddRadar = function(W, RadarParams)
+        return Library:RadarWidget(RadarParams)
+    end
+    Win.AddConsole = function(W, ConsoleParams)
+        return Library:ConsoleLogger(ConsoleParams)
+    end
+    Win.AddESPPreview = function(W, PreviewParams)
+        return Library:ESPPreview(PreviewParams)
+    end
+
+    return Win
+end
 
 Library.CreateWindow = function(Self, Params)
     if typeof(Self) == "table" and not Params then
