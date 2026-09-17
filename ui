@@ -1,4 +1,4 @@
--- 4.1
+-- 4.2
 local KraviX = {}
 
 local TweenService     = game:GetService("TweenService")
@@ -560,57 +560,30 @@ function KraviX:CreateWindow(config)
     ContentFrame.BackgroundTransparency = 1; ContentFrame.BorderSizePixel = 0
     ContentFrame.ZIndex = 10; ContentFrame.ClipsDescendants = true
 
-    -- ===== DOCK CAIXINHA (ESTILO UI EM TESTE.LUA) =====
+    -- ===== DOCK CAIXINHA (DESIGN KRAVIX MODERN COM ÍCONES DA UI) =====
     local DockOutline = Instance.new("Frame", ScreenGui)
     DockOutline.Name = "KxDockOutline"
     DockOutline.AnchorPoint = Vector2.new(0.5, 0)
     DockOutline.Position = UDim2.new(0.5, 0, 0, 20)
-    DockOutline.Size = UDim2.new(0, 0, 0, 58)
+    DockOutline.Size = UDim2.new(0, 0, 0, 48)
     DockOutline.AutomaticSize = Enum.AutomaticSize.X
-    DockOutline.BackgroundColor3 = Color3.fromRGB(11, 12, 16)
+    DockOutline.BackgroundColor3 = C.Bg2
     DockOutline.BorderSizePixel = 0
     DockOutline.ZIndex = 100
     DockOutline.Visible = false
+    mkCorner(DockOutline, 10)
+    mkStroke(DockOutline, C.Border, 1, 0)
 
-    local DockInline = Instance.new("Frame", DockOutline)
-    DockInline.Name = "DockInline"
-    DockInline.Position = UDim2.new(0, 1, 0, 1)
-    DockInline.Size = UDim2.new(1, -2, 1, -2)
-    DockInline.BackgroundColor3 = Color3.fromRGB(42, 46, 58)
-    DockInline.BorderSizePixel = 0
-    DockInline.ZIndex = 101
-
-    local DockHolder = Instance.new("Frame", DockInline)
-    DockHolder.Name = "DockHolder"
-    DockHolder.Position = UDim2.new(0, 1, 0, 1)
-    DockHolder.Size = UDim2.new(1, -2, 1, -2)
-    DockHolder.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    DockHolder.BorderSizePixel = 0
-    DockHolder.ZIndex = 102
-
-    local DockGrad = Instance.new("UIGradient", DockHolder)
-    DockGrad.Rotation = 90
-    DockGrad.Color = ColorSequence.new{
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(31, 34, 44)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(21, 23, 30))
-    }
-
-    local DockAccent = Instance.new("Frame", DockHolder)
+    local DockAccent = Instance.new("Frame", DockOutline)
     DockAccent.Name = "DockAccent"
-    DockAccent.Position = UDim2.new(0, 0, 0, 0)
-    DockAccent.Size = UDim2.new(1, 0, 0, 2)
+    DockAccent.Position = UDim2.new(0, 10, 0, 0)
+    DockAccent.Size = UDim2.new(1, -20, 0, 2)
     DockAccent.BackgroundColor3 = C.Accent
     DockAccent.BorderSizePixel = 0
     DockAccent.ZIndex = 103
+    mkCorner(DockAccent, 2)
 
-    local DockAccentGrad = Instance.new("UIGradient", DockAccent)
-    DockAccentGrad.Rotation = 90
-    DockAccentGrad.Color = ColorSequence.new{
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(225, 228, 235)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(170, 175, 190))
-    }
-
-    local ButtonHolder = Instance.new("Frame", DockHolder)
+    local ButtonHolder = Instance.new("Frame", DockOutline)
     ButtonHolder.Name = "ButtonHolder"
     ButtonHolder.Size = UDim2.new(1, 0, 1, 0)
     ButtonHolder.BackgroundTransparency = 1
@@ -624,7 +597,7 @@ function KraviX:CreateWindow(config)
     DockList.VerticalAlignment = Enum.VerticalAlignment.Center
     DockList.Padding = UDim.new(0, 6)
 
-    mkPad(ButtonHolder, 10, 8, 8, 8)
+    mkPad(ButtonHolder, 8, 6, 8, 8)
     MakeDraggable(DockOutline, DockOutline)
 
     local function createDockBtn(options)
@@ -635,84 +608,73 @@ function KraviX:CreateWindow(config)
         local onClick = options.OnClick or function() end
 
         local Btn = Instance.new("TextButton", ButtonHolder)
-        Btn.Size = UDim2.new(0, 37, 0, 37)
-        Btn.BackgroundColor3 = Color3.fromRGB(42, 46, 58)
+        Btn.Size = UDim2.new(0, 34, 0, 34)
+        Btn.BackgroundColor3 = active and Color3.fromRGB(24, 16, 40) or Color3.fromRGB(16, 16, 16)
         Btn.BorderSizePixel = 0
         Btn.Text = ""
         Btn.AutoButtonColor = false
         Btn.ZIndex = 105
-
-        local BtnInline1 = Instance.new("Frame", Btn)
-        BtnInline1.Position = UDim2.new(0, 1, 0, 1)
-        BtnInline1.Size = UDim2.new(1, -2, 1, -2)
-        BtnInline1.BackgroundColor3 = Color3.fromRGB(11, 12, 16)
-        BtnInline1.BorderSizePixel = 0
-        BtnInline1.ZIndex = 106
-
-        local BtnInline2 = Instance.new("Frame", BtnInline1)
-        BtnInline2.Position = UDim2.new(0, 1, 0, 1)
-        BtnInline2.Size = UDim2.new(1, -2, 1, -2)
-        BtnInline2.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-        BtnInline2.BorderSizePixel = 0
-        BtnInline2.ZIndex = 107
-
-        local BtnGrad = Instance.new("UIGradient", BtnInline2)
-        BtnGrad.Rotation = 90
-        BtnGrad.Color = ColorSequence.new{
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(21, 23, 30)),
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(31, 34, 44))
-        }
+        mkCorner(Btn, 8)
+        local btnStroke = mkStroke(Btn, active and C.Accent or C.BorderBt, 1, 0)
 
         local IconObj
         if icon and icon ~= "" then
-            IconObj = Instance.new("ImageLabel", BtnInline2)
+            IconObj = Instance.new("ImageLabel", Btn)
             IconObj.Size = UDim2.new(1, 0, 1, 0)
             IconObj.BackgroundTransparency = 1
             IconObj.Image = icon
-            IconObj.ImageColor3 = active and C.Accent or Color3.fromRGB(80, 80, 80)
+            IconObj.ImageColor3 = active and C.Accent2 or C.Muted
             IconObj.BorderSizePixel = 0
-            IconObj.ZIndex = 108
-            mkPad(IconObj, 5, 5, 5, 5)
+            IconObj.ZIndex = 106
+            mkPad(IconObj, 6, 6, 6, 6)
         else
-            local TextLbl = Instance.new("TextLabel", BtnInline2)
+            local TextLbl = Instance.new("TextLabel", Btn)
             TextLbl.Size = UDim2.new(1, 0, 1, 0)
             TextLbl.BackgroundTransparency = 1
             TextLbl.Text = text
-            TextLbl.TextColor3 = active and C.Accent or Color3.fromRGB(140, 140, 140)
+            TextLbl.TextColor3 = active and C.Accent2 or C.Muted
             TextLbl.TextSize = 11
             TextLbl.Font = Enum.Font.GothamBold
-            TextLbl.ZIndex = 108
+            TextLbl.ZIndex = 106
             IconObj = TextLbl
         end
 
         local isBtnActive = active
         local function setActive(state)
             isBtnActive = state
+            Tween(Btn, {BackgroundColor3 = state and Color3.fromRGB(24, 16, 40) or Color3.fromRGB(16, 16, 16)}, 0.15):Play()
+            Tween(btnStroke, {Color = state and C.Accent or C.BorderBt}, 0.15):Play()
             if IconObj:IsA("ImageLabel") then
-                Tween(IconObj, {ImageColor3 = state and C.Accent or Color3.fromRGB(80, 80, 80)}, 0.12):Play()
+                Tween(IconObj, {ImageColor3 = state and C.Accent2 or C.Muted}, 0.15):Play()
             else
-                Tween(IconObj, {TextColor3 = state and C.Accent or Color3.fromRGB(140, 140, 140)}, 0.12):Play()
+                Tween(IconObj, {TextColor3 = state and C.Accent2 or C.Muted}, 0.15):Play()
             end
         end
 
         Btn.MouseEnter:Connect(function()
             if not isBtnActive then
+                Tween(Btn, {BackgroundColor3 = Color3.fromRGB(28, 24, 36)}, 0.12):Play()
+                Tween(btnStroke, {Color = Color3.fromRGB(70, 70, 70)}, 0.12):Play()
                 if IconObj:IsA("ImageLabel") then
-                    Tween(IconObj, {ImageColor3 = C.Text}, 0.1):Play()
+                    Tween(IconObj, {ImageColor3 = C.Text}, 0.12):Play()
                 else
-                    Tween(IconObj, {TextColor3 = C.Text}, 0.1):Play()
+                    Tween(IconObj, {TextColor3 = C.Text}, 0.12):Play()
                 end
             end
         end)
+
         Btn.MouseLeave:Connect(function()
             if not isBtnActive then
+                Tween(Btn, {BackgroundColor3 = Color3.fromRGB(16, 16, 16)}, 0.12):Play()
+                Tween(btnStroke, {Color = C.BorderBt}, 0.12):Play()
                 if IconObj:IsA("ImageLabel") then
-                    Tween(IconObj, {ImageColor3 = Color3.fromRGB(80, 80, 80)}, 0.1):Play()
+                    Tween(IconObj, {ImageColor3 = C.Muted}, 0.12):Play()
                 else
-                    Tween(IconObj, {TextColor3 = Color3.fromRGB(140, 140, 140)}, 0.1):Play()
+                    Tween(IconObj, {TextColor3 = C.Muted}, 0.12):Play()
                 end
             end
         end)
+
         Btn.MouseButton1Click:Connect(function()
             onClick()
         end)
@@ -724,11 +686,11 @@ function KraviX:CreateWindow(config)
         }
     end
 
-    local BtnHome  = createDockBtn({Icon = "rbxassetid://79856374238119", Text = "H", Active = true})
-    local BtnTheme = createDockBtn({Text = "T", Active = false})
-    local BtnCloud = createDockBtn({Text = "C", Active = false})
-    local BtnUser  = createDockBtn({Text = "U", Active = false})
-    local BtnGroup = createDockBtn({Text = "G", Active = false})
+    local BtnHome  = createDockBtn({Icon = "http://www.roblox.com/asset/?id=6031075931", Text = "H", Active = true})
+    local BtnTheme = createDockBtn({Icon = "http://www.roblox.com/asset/?id=6034043463", Text = "T", Active = false})
+    local BtnCloud = createDockBtn({Icon = "http://www.roblox.com/asset/?id=6034458394", Text = "C", Active = false})
+    local BtnUser  = createDockBtn({Icon = "http://www.roblox.com/asset/?id=6034287525", Text = "U", Active = false})
+    local BtnGroup = createDockBtn({Icon = "http://www.roblox.com/asset/?id=6031082533", Text = "G", Active = false})
 
     local SidePanel = DockOutline
     Window._SidePanel = DockOutline
@@ -805,6 +767,7 @@ function KraviX:CreateWindow(config)
         local function MiniOpen()
             if miniOpen then return end
             miniOpen = true
+            if cfg.OnToggle then pcall(cfg.OnToggle, true) end
             Mini.Visible = true
             Mini.Size = UDim2.new(0,mW*0.85,0,mH*0.85)
             Mini.Position = UDim2.new(0.5,-(mW*0.85)/2,0.5,-(mH*0.85)/2)
@@ -820,6 +783,7 @@ function KraviX:CreateWindow(config)
         local function MiniClose()
             if not miniOpen then return end
             miniOpen = false
+            if cfg.OnToggle then pcall(cfg.OnToggle, false) end
             Tween(Mini,{Size=UDim2.new(0,mW*0.85,0,mH*0.85),
                 Position=UDim2.new(0.5,-(mW*0.85)/2,0.5,-(mH*0.85)/2),
                 BackgroundTransparency=1},0.18,Enum.EasingStyle.Quint,Enum.EasingDirection.In):Play()
@@ -838,6 +802,7 @@ function KraviX:CreateWindow(config)
 
         local MiniHandle = {}
         MiniHandle.Frame  = Mini
+        MiniHandle.Body   = MBody
         MiniHandle.Open   = MiniOpen
         MiniHandle.Close  = MiniClose
         MiniHandle.Toggle = MiniToggle
@@ -866,22 +831,194 @@ function KraviX:CreateWindow(config)
             return Btn
         end
 
+        function MiniHandle:AddToggle(text, default, callback)
+            callback = callback or function() end
+            local state = default or false
+            local Row = Instance.new("Frame", MBody)
+            Row.Size = UDim2.new(1, 0, 0, 24); Row.BackgroundTransparency = 1; Row.ZIndex = 252
+            local Box = Instance.new("Frame", Row)
+            Box.Size = UDim2.new(0, 14, 0, 14); Box.Position = UDim2.new(0, 0, 0.5, -7)
+            Box.BackgroundColor3 = state and C.Accent or Color3.fromRGB(22, 22, 22)
+            Box.BorderSizePixel = 0; Box.ZIndex = 253; mkCorner(Box, 3)
+            local st = mkStroke(Box, state and C.Accent or C.BorderBt, 1, 0)
+            local Lbl = Instance.new("TextLabel", Row)
+            Lbl.Size = UDim2.new(1, -20, 1, 0); Lbl.Position = UDim2.new(0, 20, 0, 0)
+            Lbl.BackgroundTransparency = 1; Lbl.Text = text; Lbl.TextColor3 = state and C.Text or C.Sub
+            Lbl.TextSize = 11; Lbl.Font = Enum.Font.Gotham; Lbl.TextXAlignment = Enum.TextXAlignment.Left; Lbl.ZIndex = 253
+            local Hit = Instance.new("TextButton", Row)
+            Hit.Size = UDim2.new(1, 0, 1, 0); Hit.BackgroundTransparency = 1; Hit.Text = ""; Hit.ZIndex = 254
+            Hit.MouseButton1Click:Connect(function()
+                state = not state
+                Tween(Box, {BackgroundColor3 = state and C.Accent or Color3.fromRGB(22, 22, 22)}, 0.1):Play()
+                Tween(st, {Color = state and C.Accent or C.BorderBt}, 0.1):Play()
+                Tween(Lbl, {TextColor3 = state and C.Text or C.Sub}, 0.1):Play()
+                callback(state)
+            end)
+            return {Set = function(_, v) state = v; Tween(Box, {BackgroundColor3 = state and C.Accent or Color3.fromRGB(22, 22, 22)}, 0.1):Play(); callback(state) end}
+        end
+
+        function MiniHandle:AddTextbox(placeholder, default, callback)
+            callback = callback or function() end
+            local Box = Instance.new("TextBox", MBody)
+            Box.Size = UDim2.new(1, 0, 0, 24)
+            Box.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
+            Box.PlaceholderText = placeholder or "Enter text..."
+            Box.PlaceholderColor3 = C.Muted; Box.Text = default or ""
+            Box.TextColor3 = C.White; Box.TextSize = 11; Box.Font = Enum.Font.Gotham
+            Box.ClearTextOnFocus = false; Box.ZIndex = 252; mkCorner(Box, 4)
+            local bs = mkStroke(Box, C.BorderBt, 1, 0); mkPad(Box, 0, 0, 6, 6)
+            Box.FocusLost:Connect(function(enter)
+                Tween(bs, {Color = C.BorderBt}, 0.12):Play()
+                if enter then callback(Box.Text) end
+            end)
+            return Box
+        end
+
         return MiniHandle
     end
 
-    -- Mini UI de exemplo "oi test" — aberta pelo botão S do painel oval.
-    -- Não fecha a UI principal nem o SidePanel ao abrir.
-    local MiniTest = Window:CreateMiniUI({Title = "Oi Test", Width = 240, Height = 130})
-    MiniTest:AddLabel("oi! isso é uma mini UI de teste.")
-    MiniTest:AddLabel("ela abre/fecha com animação própria", Color3.fromRGB(140,140,140))
-    MiniTest:AddButton("Fechar", function() MiniTest:Close() end)
-    Window._MiniTest = MiniTest
-    BtnTheme.Button.MouseButton1Click:Connect(function()
-        MiniTest:Toggle()
-    end)
+    -- ===== BOTÃO 1: HOME (MAIN WINDOW) =====
     BtnHome.Button.MouseButton1Click:Connect(function()
         ToggleWindow()
     end)
+
+    -- ===== BOTÃO 2: THEME & STYLE =====
+    local MiniStyle = Window:CreateMiniUI({
+        Title = "Theme & Style", Width = 280, Height = 180,
+        OnToggle = function(on) BtnTheme.SetActive(on) end
+    })
+    MiniStyle:AddLabel("Ajustes visuais e utilitários", C.Sub)
+    MiniStyle:AddButton("Copiar JobID do Servidor", function()
+        setclipboard(game.JobId)
+        CreateNotification("KraviX", "JobID copiado com sucesso!", 3, "info")
+    end)
+    MiniStyle:AddButton("Reentrar no Servidor (Rejoin)", function()
+        game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
+    end)
+    MiniStyle:AddButton("Copiar Script de Rejoin", function()
+        setclipboard('game:GetService("TeleportService"):TeleportToPlaceInstance(' .. game.PlaceId .. ', "' .. game.JobId .. '", game.Players.LocalPlayer)')
+        CreateNotification("KraviX", "Script de rejoin copiado!", 3, "success")
+    end)
+    BtnTheme.Button.MouseButton1Click:Connect(function() MiniStyle:Toggle() end)
+
+    -- ===== BOTÃO 3: CONFIGURATIONS =====
+    local MiniConfigs = Window:CreateMiniUI({
+        Title = "Configurations", Width = 280, Height = 210,
+        OnToggle = function(on) BtnCloud.SetActive(on) end
+    })
+    MiniConfigs:AddLabel("Gerenciador de Configurações (.cfg)", C.Sub)
+    local cfgBox = MiniConfigs:AddTextbox("Nome da config...", "default", function() end)
+    MiniConfigs:AddButton("Salvar Configuração", function()
+        CreateNotification("KraviX", "Config '" .. (cfgBox.Text ~= "" and cfgBox.Text or "default") .. "' salva!", 3, "success")
+    end)
+    MiniConfigs:AddButton("Carregar Configuração", function()
+        CreateNotification("KraviX", "Config '" .. (cfgBox.Text ~= "" and cfgBox.Text or "default") .. "' carregada!", 3, "info")
+    end)
+    MiniConfigs:AddButton("Deletar Configuração", function()
+        CreateNotification("KraviX", "Config deletada!", 3, "error")
+    end)
+    BtnCloud.Button.MouseButton1Click:Connect(function() MiniConfigs:Toggle() end)
+
+    -- ===== BOTÃO 4: ESP PREVIEW & VISUALS =====
+    local MiniESP = Window:CreateMiniUI({
+        Title = "ESP Preview & Visuals", Width = 280, Height = 250,
+        OnToggle = function(on) BtnUser.SetActive(on) end
+    })
+    MiniESP:AddLabel("Preview Interativo de ESP", C.Sub)
+
+    local EspPreviewFrame = Instance.new("Frame", MiniESP.Body)
+    EspPreviewFrame.Size = UDim2.new(1, 0, 0, 130)
+    EspPreviewFrame.BackgroundColor3 = Color3.fromRGB(12, 12, 14)
+    EspPreviewFrame.BorderSizePixel = 0
+    mkCorner(EspPreviewFrame, 6)
+    mkStroke(EspPreviewFrame, C.BorderBt, 1, 0)
+
+    local EspBox = Instance.new("Frame", EspPreviewFrame)
+    EspBox.Size = UDim2.new(0, 60, 0, 95)
+    EspBox.Position = UDim2.new(0.5, -30, 0.5, -45)
+    EspBox.BackgroundTransparency = 1
+    mkStroke(EspBox, C.Accent, 1, 0)
+
+    local HealthLine = Instance.new("Frame", EspBox)
+    HealthLine.Size = UDim2.new(0, 3, 1, 0)
+    HealthLine.Position = UDim2.new(0, -6, 0, 0)
+    HealthLine.BackgroundColor3 = Color3.fromRGB(60, 210, 110)
+    HealthLine.BorderSizePixel = 0
+    mkCorner(HealthLine, 1)
+
+    local DummyIcon = Instance.new("TextLabel", EspBox)
+    DummyIcon.Size = UDim2.new(1, 0, 1, 0)
+    DummyIcon.BackgroundTransparency = 1
+    DummyIcon.Text = "🧍"
+    DummyIcon.TextSize = 44
+    DummyIcon.ZIndex = 252
+
+    local NameLbl = Instance.new("TextLabel", EspBox)
+    NameLbl.Size = UDim2.new(1, 40, 0, 14)
+    NameLbl.Position = UDim2.new(0.5, -20, 0, -16)
+    NameLbl.BackgroundTransparency = 1
+    NameLbl.Text = "Player1 [50m]"
+    NameLbl.TextColor3 = C.White
+    NameLbl.TextSize = 9
+    NameLbl.Font = Enum.Font.Code
+    NameLbl.TextXAlignment = Enum.TextXAlignment.Center
+
+    MiniESP:AddToggle("ESP Box Visible", true, function(v) EspBox.Visible = v end)
+    MiniESP:AddToggle("ESP Health Bar", true, function(v) HealthLine.Visible = v end)
+    BtnUser.Button.MouseButton1Click:Connect(function() MiniESP:Toggle() end)
+
+    -- ===== BOTÃO 5: PLAYER LIST & PRIORITY =====
+    local MiniPlayerlist = Window:CreateMiniUI({
+        Title = "Player List & Priority", Width = 290, Height = 230,
+        OnToggle = function(on) BtnGroup.SetActive(on) end
+    })
+    MiniPlayerlist:AddLabel("Jogadores no Servidor (" .. tostring(#game:GetService("Players"):GetPlayers()) .. ")", C.Sub)
+
+    local PlrScroll = Instance.new("ScrollingFrame", MiniPlayerlist.Body)
+    PlrScroll.Size = UDim2.new(1, 0, 0, 110)
+    PlrScroll.BackgroundTransparency = 1
+    PlrScroll.BorderSizePixel = 0
+    PlrScroll.ScrollBarThickness = 2
+    PlrScroll.ScrollBarImageColor3 = C.Muted
+    local PlrList = Instance.new("UIListLayout", PlrScroll)
+    PlrList.Padding = UDim.new(0, 3)
+
+    local function refreshPlrList()
+        for _, c in ipairs(PlrScroll:GetChildren()) do
+            if c:IsA("Frame") then c:Destroy() end
+        end
+        for _, plr in ipairs(game:GetService("Players"):GetPlayers()) do
+            local Row = Instance.new("Frame", PlrScroll)
+            Row.Size = UDim2.new(1, -4, 0, 22)
+            Row.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
+            Row.BorderSizePixel = 0
+            mkCorner(Row, 4)
+
+            local PName = Instance.new("TextLabel", Row)
+            PName.Size = UDim2.new(0.6, 0, 1, 0)
+            PName.Position = UDim2.new(0, 6, 0, 0)
+            PName.BackgroundTransparency = 1
+            PName.Text = plr.DisplayName .. " (@" .. plr.Name .. ")"
+            PName.TextColor3 = C.Text
+            PName.TextSize = 10
+            PName.Font = Enum.Font.Gotham
+            PName.TextXAlignment = Enum.TextXAlignment.Left
+
+            local PBadge = Instance.new("TextLabel", Row)
+            PBadge.Size = UDim2.new(0.35, 0, 1, 0)
+            PBadge.Position = UDim2.new(0.63, 0, 0, 0)
+            PBadge.BackgroundTransparency = 1
+            PBadge.Text = plr == LocalPlayer and "[You]" or "[Neutral]"
+            PBadge.TextColor3 = plr == LocalPlayer and C.Accent or C.Sub
+            PBadge.TextSize = 9
+            PBadge.Font = Enum.Font.Code
+            PBadge.TextXAlignment = Enum.TextXAlignment.Right
+        end
+    end
+
+    refreshPlrList()
+    MiniPlayerlist:AddButton("Atualizar Lista (Refresh)", refreshPlrList)
+    BtnGroup.Button.MouseButton1Click:Connect(function() MiniPlayerlist:Toggle() end)
 
     local function HideWindow()
         if not Main.Visible then return end
