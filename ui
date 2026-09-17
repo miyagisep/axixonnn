@@ -1,4 +1,4 @@
--- 4.1
+-- 4
 local KraviX = {}
 
 local TweenService     = game:GetService("TweenService")
@@ -703,7 +703,7 @@ function KraviX:CreateWindow(config)
     local BtnHome  = createDockBtn({Icon = "rbxassetid://6031075931", Text = "H", Active = true})
     local BtnESP   = createDockBtn({Icon = "rbxassetid://6031097229", Text = "E", Active = false})
     local BtnTheme = createDockBtn({Icon = "rbxassetid://6034287525", Text = "T", Active = false})
-    local BtnCloud = createDockBtn({Icon = "rbxassetid://6034458394", Text = "C", Active = false})
+    local BtnCloud = createDockBtn({Icon = "rbxassetid://6031280882", Text = "C", Active = false})
     local BtnGroup = createDockBtn({Icon = "rbxassetid://6031082533", Text = "G", Active = false})
 
     local SidePanel = DockOutline
