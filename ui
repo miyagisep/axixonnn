@@ -1,4 +1,4 @@
--- 4.1
+-- 4
 local KraviX = {}
 
 local TweenService     = game:GetService("TweenService")
@@ -188,6 +188,11 @@ local _notifSlots          = {}
 local _notifAccentOverride = nil
 
 local function CreateNotification(title, text, duration, ntype)
+    if typeof(title) == "table" then
+        title, text, duration, ntype = text, duration, ntype, nil
+    end
+    title = tostring(title or "")
+    text  = tostring(text or "")
     PlaySound(SOUND_NOTIF)
     ntype = ntype or "info"
     local dotColor
@@ -416,13 +421,22 @@ function KraviX:CreateWindow(config)
 
     _notifAccentOverride = C.Accent
 
+    local HideWindow, ShowWindow, ToggleWindow
     local activeTabIndex = 0
     local Window = {Tabs={}, Keybind=Enum.KeyCode.Unknown}
 
-    Window.Notify        = CreateNotification
-    Window.NotifySuccess = function(t,m,d) CreateNotification(t,m,d,"success") end
-    Window.NotifyError   = function(t,m,d) CreateNotification(t,m,d,"error")   end
-    Window.NotifyInfo    = function(t,m,d) CreateNotification(t,m,d,"info")    end
+    local function wrapNotif(a, b, c, ntype)
+        if typeof(a) == "table" then
+            CreateNotification(b, c, tonumber(d) or 3, ntype)
+        else
+            CreateNotification(a, b, tonumber(c) or 3, ntype)
+        end
+    end
+
+    Window.Notify        = function(a, b, c, d) wrapNotif(a, b, c, nil) end
+    Window.NotifySuccess = function(a, b, c, d) wrapNotif(a, b, c, "success") end
+    Window.NotifyError   = function(a, b, c, d) wrapNotif(a, b, c, "error") end
+    Window.NotifyInfo    = function(a, b, c, d) wrapNotif(a, b, c, "info") end
 
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "KraviX"; ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
@@ -1070,7 +1084,7 @@ function KraviX:CreateWindow(config)
     MiniPlayerlist:AddButton("Atualizar Lista (Refresh)", refreshPlrList)
     BtnGroup.Button.MouseButton1Click:Connect(function() MiniPlayerlist:Toggle() end)
 
-    local function HideWindow()
+    HideWindow = function()
         if not Main.Visible then return end
         BtnHome.SetActive(false)
         Main.ClipsDescendants = true
@@ -1090,7 +1104,7 @@ function KraviX:CreateWindow(config)
         SidePanel.Visible = true
     end
 
-    local function ShowWindow()
+    ShowWindow = function()
         if Main.Visible then return end
         BtnHome.SetActive(true)
         Main.Visible = true; Backdrop.Visible = true
@@ -1111,7 +1125,7 @@ function KraviX:CreateWindow(config)
         end)
     end
 
-    local function ToggleWindow()
+    ToggleWindow = function()
         if Main.Visible then HideWindow() else ShowWindow() end
     end
     Window.HideWindow   = HideWindow
