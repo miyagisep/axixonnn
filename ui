@@ -1,4 +1,4 @@
--- 4
+-- 4.1
 local KraviX = {}
 
 local TweenService     = game:GetService("TweenService")
@@ -962,13 +962,16 @@ function KraviX:CreateWindow(config)
     EspBox.Size = UDim2.new(0, 88, 0, 140)
     EspBox.Position = UDim2.new(0.5, -44, 0.5, -70)
     EspBox.BackgroundTransparency = 1
+    EspBox.ZIndex = 260
     local espBoxStroke = mkStroke(EspBox, C.Accent, 1, 0)
+    espBoxStroke.ZIndex = 261
 
     local HealthLine = Instance.new("Frame", EspBox)
     HealthLine.Size = UDim2.new(0, 3, 1, 0)
     HealthLine.Position = UDim2.new(0, -6, 0, 0)
     HealthLine.BackgroundColor3 = Color3.fromRGB(60, 210, 110)
     HealthLine.BorderSizePixel = 0
+    HealthLine.ZIndex = 262
     mkCorner(HealthLine, 1)
 
     local NameLbl = Instance.new("TextLabel", EspBox)
@@ -980,12 +983,14 @@ function KraviX:CreateWindow(config)
     NameLbl.TextSize = 9
     NameLbl.Font = Enum.Font.Code
     NameLbl.TextXAlignment = Enum.TextXAlignment.Center
+    NameLbl.ZIndex = 262
 
     local TracerLine = Instance.new("Frame", Overlay)
     TracerLine.Size = UDim2.new(0, 1, 0, 20)
     TracerLine.Position = UDim2.new(0.5, 0, 1, -20)
     TracerLine.BackgroundColor3 = C.Accent
     TracerLine.BorderSizePixel = 0
+    TracerLine.ZIndex = 262
     TracerLine.Visible = false
 
     local charModel = nil
@@ -1002,59 +1007,32 @@ function KraviX:CreateWindow(config)
 
         local realChar = LocalPlayer and (LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait())
         if realChar then
-            local root = realChar:FindFirstChild("HumanoidRootPart") or realChar.PrimaryPart
+            local root = realChar:FindFirstChild("HumanoidRootPart") or realChar:FindFirstChild("Torso") or realChar.PrimaryPart
             if not root then
                 root = realChar:WaitForChild("HumanoidRootPart", 3)
             end
             if root then
-                for _, obj in ipairs(realChar:GetDescendants()) do
-                    pcall(function() obj.Archivable = true end)
-                end
-                realChar.Archivable = true
-
-                charModel = Instance.new("Model")
-                charModel.Name = "PreviewModel"
-
-                local rootCF = root.CFrame
-
-                for _, obj in ipairs(realChar:GetDescendants()) do
-                    if obj:IsA("BasePart") then
-                        local p = obj:Clone()
-                        p.Archivable = true
-                        p.CanCollide = false
-                        p.Anchored = true
-                        p.Parent = charModel
-                        partCFrames[p] = rootCF:ToObjectSpace(obj.CFrame)
-                        origColors[p] = p.Color
-                        origMaterials[p] = p.Material
-                        if obj == root then
-                            charModel.PrimaryPart = p
-                        end
-                    elseif obj:IsA("Shirt") or obj:IsA("Pants") or obj:IsA("BodyColors") or obj:IsA("CharacterMesh") or obj:IsA("SpecialMesh") or obj:IsA("BlockMesh") or obj:IsA("CylinderMesh") then
-                        local item = obj:Clone()
-                        item.Parent = charModel
-                    elseif obj:IsA("Humanoid") then
-                        local hum = obj:Clone()
-                        hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
-                        hum.Parent = charModel
+                pcall(function()
+                    realChar.Archivable = true
+                    for _, obj in ipairs(realChar:GetDescendants()) do
+                        obj.Archivable = true
                     end
-                end
+                end)
 
-                for _, acc in ipairs(realChar:GetChildren()) do
-                    if acc:IsA("Accessory") or acc:IsA("Accoutrement") then
-                        local accClone = acc:Clone()
-                        accClone.Parent = charModel
-                        for _, p in ipairs(accClone:GetDescendants()) do
-                            if p:IsA("BasePart") then
-                                p.CanCollide = false
-                                p.Anchored = true
-                                origColors[p] = p.Color
-                                origMaterials[p] = p.Material
-                                local origPart = acc:FindFirstChild(p.Name, true)
-                                if origPart and origPart:IsA("BasePart") then
-                                    partCFrames[p] = rootCF:ToObjectSpace(origPart.CFrame)
-                                end
-                            end
+                local ok, clone = pcall(function() return realChar:Clone() end)
+                if ok and clone then
+                    charModel = clone
+                    local realRootCF = root.CFrame
+
+                    for _, obj in ipairs(charModel:GetDescendants()) do
+                        if obj:IsA("Script") or obj:IsA("LocalScript") or obj:IsA("ModuleScript") or obj:IsA("Sound") or obj:IsA("Animate") then
+                            obj:Destroy()
+                        elseif obj:IsA("BasePart") then
+                            obj.Anchored = true
+                            obj.CanCollide = false
+                            partCFrames[obj] = realRootCF:ToObjectSpace(obj.CFrame)
+                            origColors[obj] = obj.Color
+                            origMaterials[obj] = obj.Material
                         end
                     end
                 end
@@ -1165,9 +1143,9 @@ function KraviX:CreateWindow(config)
         if cfg.Tracers ~= nil and TracerLine then TracerLine.Visible = cfg.Tracers end
         if cfg.TracerColor ~= nil and TracerLine then TracerLine.BackgroundColor3 = cfg.TracerColor end
 
-        if cfg.Chams ~= nil or cfg.Skeleton ~= nil then
-            chamsActive = (cfg.Chams == true or cfg.Skeleton == true)
-            local chamColor = cfg.ChamsColor or cfg.SkelColor or C.Accent
+        if cfg.Chams ~= nil then
+            chamsActive = (cfg.Chams == true)
+            local chamColor = cfg.ChamsColor or C.Accent
             for part, _ in pairs(partCFrames) do
                 if part and part.Parent then
                     if chamsActive then
