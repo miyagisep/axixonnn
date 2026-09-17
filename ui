@@ -1,4 +1,4 @@
--- 4.2
+-- 4.1
 local KraviX = {}
 
 local TweenService     = game:GetService("TweenService")
@@ -919,25 +919,64 @@ function KraviX:CreateWindow(config)
     end)
     BtnCloud.Button.MouseButton1Click:Connect(function() MiniConfigs:Toggle() end)
 
-    -- ===== BOTÃO 4: ESP PREVIEW & VISUALS =====
+    -- ===== BOTÃO 4: REAL 3D VIEWPORT ESP PREVIEW & VISUALS =====
     local MiniESP = Window:CreateMiniUI({
-        Title = "ESP Preview & Visuals", Width = 280, Height = 250,
+        Title = "ESP Preview & Visuals", Width = 290, Height = 290,
         OnToggle = function(on) BtnUser.SetActive(on) end
     })
-    MiniESP:AddLabel("Preview Interativo de ESP", C.Sub)
+    MiniESP:AddLabel("Preview Interativo 3D de ESP & Visuals", C.Sub)
 
-    local EspPreviewFrame = Instance.new("Frame", MiniESP.Body)
-    EspPreviewFrame.Size = UDim2.new(1, 0, 0, 130)
-    EspPreviewFrame.BackgroundColor3 = Color3.fromRGB(12, 12, 14)
-    EspPreviewFrame.BorderSizePixel = 0
-    mkCorner(EspPreviewFrame, 6)
-    mkStroke(EspPreviewFrame, C.BorderBt, 1, 0)
+    local VFrame = Instance.new("ViewportFrame", MiniESP.Body)
+    VFrame.Size = UDim2.new(1, 0, 0, 150)
+    VFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 14)
+    VFrame.BorderSizePixel = 0
+    VFrame.ZIndex = 252
+    mkCorner(VFrame, 6)
+    mkStroke(VFrame, C.BorderBt, 1, 0)
 
-    local EspBox = Instance.new("Frame", EspPreviewFrame)
-    EspBox.Size = UDim2.new(0, 60, 0, 95)
-    EspBox.Position = UDim2.new(0.5, -30, 0.5, -45)
+    local WModel = Instance.new("WorldModel", VFrame)
+    local DummyChar = Instance.new("Model", WModel)
+    DummyChar.Name = "ESPDummy"
+
+    local function makeDummyPart(name, size, pos, color)
+        local p = Instance.new("Part", DummyChar)
+        p.Name = name; p.Size = size; p.Position = pos
+        p.Color = color or Color3.fromRGB(150, 150, 160)
+        p.Material = Enum.Material.SmoothPlastic
+        p.Anchored = true; p.CanCollide = false
+        return p
+    end
+
+    local dHrp   = makeDummyPart("HumanoidRootPart", Vector3.new(2, 2, 1), Vector3.new(0, 0, 0), Color3.fromRGB(100, 100, 110))
+    local dHead  = makeDummyPart("Head", Vector3.new(1.2, 1.2, 1.2), Vector3.new(0, 2.1, 0), Color3.fromRGB(220, 220, 230))
+    local dTorso = makeDummyPart("Torso", Vector3.new(2, 2, 1), Vector3.new(0, 0.5, 0), Color3.fromRGB(140, 140, 150))
+    local dLArm  = makeDummyPart("Left Arm", Vector3.new(1, 2, 1), Vector3.new(-1.6, 0.5, 0), Color3.fromRGB(140, 140, 150))
+    local dRArm  = makeDummyPart("Right Arm", Vector3.new(1, 2, 1), Vector3.new(1.6, 0.5, 0), Color3.fromRGB(140, 140, 150))
+    local dLLeg  = makeDummyPart("Left Leg", Vector3.new(1, 2, 1), Vector3.new(-0.5, -1.6, 0), Color3.fromRGB(120, 120, 130))
+    local dRLeg  = makeDummyPart("Right Leg", Vector3.new(1, 2, 1), Vector3.new(0.5, -1.6, 0), Color3.fromRGB(120, 120, 130))
+    DummyChar.PrimaryPart = dHrp
+
+    local Cam = Instance.new("Camera", VFrame)
+    Cam.CFrame = CFrame.new(Vector3.new(0, 0.4, 7.2), Vector3.new(0, 0.3, 0))
+    VFrame.CurrentCamera = Cam
+
+    local Highlight = Instance.new("Highlight", DummyChar)
+    Highlight.FillColor = C.Accent
+    Highlight.OutlineColor = C.White
+    Highlight.FillTransparency = 0.5
+    Highlight.OutlineTransparency = 0
+    Highlight.Enabled = false
+
+    local Overlay = Instance.new("Frame", VFrame)
+    Overlay.Size = UDim2.new(1, 0, 1, 0)
+    Overlay.BackgroundTransparency = 1
+    Overlay.ZIndex = 255
+
+    local EspBox = Instance.new("Frame", Overlay)
+    EspBox.Size = UDim2.new(0, 76, 0, 118)
+    EspBox.Position = UDim2.new(0.5, -38, 0.5, -59)
     EspBox.BackgroundTransparency = 1
-    mkStroke(EspBox, C.Accent, 1, 0)
+    local espBoxStroke = mkStroke(EspBox, C.Accent, 1, 0)
 
     local HealthLine = Instance.new("Frame", EspBox)
     HealthLine.Size = UDim2.new(0, 3, 1, 0)
@@ -946,25 +985,36 @@ function KraviX:CreateWindow(config)
     HealthLine.BorderSizePixel = 0
     mkCorner(HealthLine, 1)
 
-    local DummyIcon = Instance.new("TextLabel", EspBox)
-    DummyIcon.Size = UDim2.new(1, 0, 1, 0)
-    DummyIcon.BackgroundTransparency = 1
-    DummyIcon.Text = "🧍"
-    DummyIcon.TextSize = 44
-    DummyIcon.ZIndex = 252
-
     local NameLbl = Instance.new("TextLabel", EspBox)
-    NameLbl.Size = UDim2.new(1, 40, 0, 14)
-    NameLbl.Position = UDim2.new(0.5, -20, 0, -16)
+    NameLbl.Size = UDim2.new(1, 50, 0, 14)
+    NameLbl.Position = UDim2.new(0.5, -25, 0, -16)
     NameLbl.BackgroundTransparency = 1
-    NameLbl.Text = "Player1 [50m]"
+    NameLbl.Text = "Target_Dummy [35m]"
     NameLbl.TextColor3 = C.White
     NameLbl.TextSize = 9
     NameLbl.Font = Enum.Font.Code
     NameLbl.TextXAlignment = Enum.TextXAlignment.Center
 
+    local TracerLine = Instance.new("Frame", Overlay)
+    TracerLine.Size = UDim2.new(0, 1, 0, 22)
+    TracerLine.Position = UDim2.new(0.5, 0, 1, -22)
+    TracerLine.BackgroundColor3 = C.Accent
+    TracerLine.BorderSizePixel = 0
+    TracerLine.Visible = false
+
+    local rotAngle = 0
+    RunService.RenderStepped:Connect(function(dt)
+        if VFrame and VFrame.Parent and VFrame.Visible then
+            rotAngle = (rotAngle + dt * 35) % 360
+            DummyChar:SetPrimaryPartCFrame(CFrame.new(0, 0, 0) * CFrame.Angles(0, math.rad(rotAngle), 0))
+        end
+    end)
+
     MiniESP:AddToggle("ESP Box Visible", true, function(v) EspBox.Visible = v end)
     MiniESP:AddToggle("ESP Health Bar", true, function(v) HealthLine.Visible = v end)
+    MiniESP:AddToggle("ESP Tracers", false, function(v) TracerLine.Visible = v end)
+    MiniESP:AddToggle("Chams Highlight", false, function(v) Highlight.Enabled = v end)
+
     BtnUser.Button.MouseButton1Click:Connect(function() MiniESP:Toggle() end)
 
     -- ===== BOTÃO 5: PLAYER LIST & PRIORITY =====
@@ -1037,7 +1087,7 @@ function KraviX:CreateWindow(config)
         Main.BackgroundTransparency = 0
         TopBar.BackgroundTransparency = 0; TabBar.BackgroundTransparency = 0
         Backdrop.BackgroundTransparency = 0.55; Main.ClipsDescendants = false
-        SidePanel.Visible = false
+        SidePanel.Visible = true
     end
 
     local function ShowWindow()
