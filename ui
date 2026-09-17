@@ -1,4 +1,4 @@
--- 4.1
+-- 4
 local KraviX = {}
 
 local TweenService     = game:GetService("TweenService")
@@ -700,21 +700,21 @@ function KraviX:CreateWindow(config)
         }
     end
 
-    local BtnHome  = createDockBtn({Icon = "http://www.roblox.com/asset/?id=6031075931", Text = "H", Active = true})
-    local BtnTheme = createDockBtn({Icon = "http://www.roblox.com/asset/?id=6034043463", Text = "T", Active = false})
-    local BtnCloud = createDockBtn({Icon = "http://www.roblox.com/asset/?id=6034458394", Text = "C", Active = false})
-    local BtnUser  = createDockBtn({Icon = "http://www.roblox.com/asset/?id=6034287525", Text = "U", Active = false})
-    local BtnGroup = createDockBtn({Icon = "http://www.roblox.com/asset/?id=6031082533", Text = "G", Active = false})
+    local BtnHome  = createDockBtn({Icon = "rbxassetid://6031075931", Text = "H", Active = true})
+    local BtnESP   = createDockBtn({Icon = "rbxassetid://6031097229", Text = "E", Active = false})
+    local BtnTheme = createDockBtn({Icon = "rbxassetid://6034287525", Text = "T", Active = false})
+    local BtnCloud = createDockBtn({Icon = "rbxassetid://6034458394", Text = "C", Active = false})
+    local BtnGroup = createDockBtn({Icon = "rbxassetid://6031082533", Text = "G", Active = false})
 
     local SidePanel = DockOutline
     Window._SidePanel = DockOutline
     Window._SideBtnC  = BtnHome.Button
-    Window._SideBtnS  = BtnTheme.Button
+    Window._SideBtnS  = BtnESP.Button
     Window._Dock      = DockOutline
     Window._BtnHome   = BtnHome
+    Window._BtnESP    = BtnESP
     Window._BtnTheme  = BtnTheme
     Window._BtnCloud  = BtnCloud
-    Window._BtnUser   = BtnUser
     Window._BtnGroup  = BtnGroup
 
     function Window:CreateDockButton(opts)
@@ -933,16 +933,16 @@ function KraviX:CreateWindow(config)
     end)
     BtnCloud.Button.MouseButton1Click:Connect(function() MiniConfigs:Toggle() end)
 
-    -- ===== BOTÃO 4: REAL 3D VIEWPORT ESP PREVIEW & VISUALS (COM O SEU PERSONAGEM) =====
+    -- ===== BOTÃO 2: REAL 3D VIEWPORT ESP PREVIEW & VISUALS (COM EYE ICON) =====
     local MiniESP = Window:CreateMiniUI({
-        Title = "ESP Preview & Visuals", Width = 290, Height = 290,
-        OnToggle = function(on) BtnUser.SetActive(on) end
+        Title = "ESP PREVIEW", Width = 250, Height = 340,
+        OnToggle = function(on) BtnESP.SetActive(on) end
     })
     MiniESP:AddLabel("Preview Interativo do Seu Personagem", C.Sub)
 
     local VFrame = Instance.new("ViewportFrame", MiniESP.Body)
-    VFrame.Size = UDim2.new(1, 0, 0, 150)
-    VFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 14)
+    VFrame.Size = UDim2.new(1, 0, 0, 190)
+    VFrame.BackgroundColor3 = Color3.fromRGB(12, 12, 16)
     VFrame.BorderSizePixel = 0
     VFrame.ZIndex = 252
     VFrame.LightColor = Color3.fromRGB(255, 255, 255)
@@ -959,8 +959,8 @@ function KraviX:CreateWindow(config)
     Overlay.ZIndex = 255
 
     local EspBox = Instance.new("Frame", Overlay)
-    EspBox.Size = UDim2.new(0, 76, 0, 118)
-    EspBox.Position = UDim2.new(0.5, -38, 0.5, -59)
+    EspBox.Size = UDim2.new(0, 88, 0, 140)
+    EspBox.Position = UDim2.new(0.5, -44, 0.5, -70)
     EspBox.BackgroundTransparency = 1
     local espBoxStroke = mkStroke(EspBox, C.Accent, 1, 0)
 
@@ -972,8 +972,8 @@ function KraviX:CreateWindow(config)
     mkCorner(HealthLine, 1)
 
     local NameLbl = Instance.new("TextLabel", EspBox)
-    NameLbl.Size = UDim2.new(1, 50, 0, 14)
-    NameLbl.Position = UDim2.new(0.5, -25, 0, -16)
+    NameLbl.Size = UDim2.new(1, 60, 0, 14)
+    NameLbl.Position = UDim2.new(0.5, -30, 0, -16)
     NameLbl.BackgroundTransparency = 1
     NameLbl.Text = (LocalPlayer and LocalPlayer.DisplayName or "Player") .. " [35m]"
     NameLbl.TextColor3 = C.White
@@ -982,8 +982,8 @@ function KraviX:CreateWindow(config)
     NameLbl.TextXAlignment = Enum.TextXAlignment.Center
 
     local TracerLine = Instance.new("Frame", Overlay)
-    TracerLine.Size = UDim2.new(0, 1, 0, 16)
-    TracerLine.Position = UDim2.new(0.5, 0, 1, -16)
+    TracerLine.Size = UDim2.new(0, 1, 0, 20)
+    TracerLine.Position = UDim2.new(0.5, 0, 1, -20)
     TracerLine.BackgroundColor3 = C.Accent
     TracerLine.BorderSizePixel = 0
     TracerLine.Visible = false
@@ -1088,8 +1088,8 @@ function KraviX:CreateWindow(config)
         charModel.Parent = WModel
 
         local Cam = Instance.new("Camera")
-        Cam.FieldOfView = 50
-        Cam.CFrame = CFrame.new(Vector3.new(0, 0, 7.5), Vector3.new(0, 0, 0))
+        Cam.FieldOfView = 48
+        Cam.CFrame = CFrame.new(Vector3.new(0, 0.1, 7.8), Vector3.new(0, 0.1, 0))
         VFrame.CurrentCamera = Cam
         Cam.Parent = VFrame
 
@@ -1131,25 +1131,114 @@ function KraviX:CreateWindow(config)
         end
     end)
 
-    MiniESP:AddToggle("ESP Box Visible", true, function(v) EspBox.Visible = v end)
-    MiniESP:AddToggle("ESP Health Bar", true, function(v) HealthLine.Visible = v end)
-    MiniESP:AddToggle("ESP Tracers", false, function(v) TracerLine.Visible = v end)
-    MiniESP:AddToggle("Chams Highlight", false, function(v)
-        chamsActive = v
-        for part, _ in pairs(partCFrames) do
-            if part and part.Parent then
-                if chamsActive then
-                    part.Color = C.Accent
-                    part.Material = Enum.Material.Neon
-                else
-                    if origColors[part] then part.Color = origColors[part] end
-                    if origMaterials[part] then part.Material = origMaterials[part] end
+    Window.ESPPreviewState = {
+        Box         = true,
+        BoxColor    = C.Accent,
+        Health      = true,
+        Name        = true,
+        NameColor   = C.White,
+        Distance    = true,
+        DistColor   = C.Sub,
+        Tracers     = false,
+        TracerColor = C.Accent,
+        Chams       = false,
+        ChamsColor  = C.Accent,
+    }
+
+    local function applyESPPreviewUpdate(cfg)
+        if type(cfg) ~= "table" then return end
+        for k, v in pairs(cfg) do
+            Window.ESPPreviewState[k] = v
+        end
+        if cfg.Box ~= nil then EspBox.Visible = cfg.Box end
+        if cfg.Boxes ~= nil then EspBox.Visible = cfg.Boxes end
+        if cfg.BoxColor ~= nil and espBoxStroke then espBoxStroke.Color = cfg.BoxColor end
+        
+        if cfg.Health ~= nil then HealthLine.Visible = cfg.Health end
+        if cfg.Healthbar ~= nil then HealthLine.Visible = cfg.Healthbar end
+        if cfg.HealthBar ~= nil then HealthLine.Visible = cfg.HealthBar end
+        
+        if cfg.Name ~= nil and NameLbl then NameLbl.Visible = cfg.Name end
+        if cfg.Names ~= nil and NameLbl then NameLbl.Visible = cfg.Names end
+        if cfg.NameColor ~= nil and NameLbl then NameLbl.TextColor3 = cfg.NameColor end
+
+        if cfg.Tracers ~= nil and TracerLine then TracerLine.Visible = cfg.Tracers end
+        if cfg.TracerColor ~= nil and TracerLine then TracerLine.BackgroundColor3 = cfg.TracerColor end
+
+        if cfg.Chams ~= nil or cfg.Skeleton ~= nil then
+            chamsActive = (cfg.Chams == true or cfg.Skeleton == true)
+            local chamColor = cfg.ChamsColor or cfg.SkelColor or C.Accent
+            for part, _ in pairs(partCFrames) do
+                if part and part.Parent then
+                    if chamsActive then
+                        part.Color = chamColor
+                        part.Material = Enum.Material.Neon
+                    else
+                        if origColors[part] then part.Color = origColors[part] end
+                        if origMaterials[part] then part.Material = origMaterials[part] end
+                    end
                 end
             end
         end
+    end
+
+    function Window:UpdateESPPreview(cfg)
+        applyESPPreviewUpdate(cfg)
+    end
+
+    function Window:BindESPPreview(espTable)
+        if type(espTable) ~= "table" then return end
+        Window._BoundESPSettings = espTable
+        applyESPPreviewUpdate(espTable)
+
+        task.spawn(function()
+            local lastState = {}
+            while Window and Window._BoundESPSettings == espTable do
+                local changed = false
+                local patch = {}
+                for k, v in pairs(espTable) do
+                    if lastState[k] ~= v then
+                        lastState[k] = v
+                        patch[k] = v
+                        changed = true
+                    end
+                end
+                if changed then
+                    applyESPPreviewUpdate(patch)
+                end
+                task.wait(0.15)
+            end
+        end)
+    end
+
+    Window.ESPPreview = {
+        Update       = function(_, cfg) Window:UpdateESPPreview(cfg) end,
+        SetBox       = function(_, v, col) Window:UpdateESPPreview({Box = v, BoxColor = col}) end,
+        SetHealth    = function(_, v) Window:UpdateESPPreview({Health = v}) end,
+        SetName      = function(_, v, col) Window:UpdateESPPreview({Name = v, NameColor = col}) end,
+        SetTracers   = function(_, v, col) Window:UpdateESPPreview({Tracers = v, TracerColor = col}) end,
+        SetChams     = function(_, v, col) Window:UpdateESPPreview({Chams = v, ChamsColor = col}) end,
+        Bind         = function(_, tbl) Window:BindESPPreview(tbl) end,
+    }
+
+    MiniESP:AddToggle("ESP Box Visible", true, function(v)
+        Window:UpdateESPPreview({Box = v})
+        if Window._BoundESPSettings then Window._BoundESPSettings.Box = v; Window._BoundESPSettings.Boxes = v end
+    end)
+    MiniESP:AddToggle("ESP Health Bar", true, function(v)
+        Window:UpdateESPPreview({Health = v})
+        if Window._BoundESPSettings then Window._BoundESPSettings.Health = v; Window._BoundESPSettings.Healthbar = v end
+    end)
+    MiniESP:AddToggle("ESP Tracers", false, function(v)
+        Window:UpdateESPPreview({Tracers = v})
+        if Window._BoundESPSettings then Window._BoundESPSettings.Tracers = v end
+    end)
+    MiniESP:AddToggle("Chams Highlight", false, function(v)
+        Window:UpdateESPPreview({Chams = v})
+        if Window._BoundESPSettings then Window._BoundESPSettings.Chams = v end
     end)
 
-    BtnUser.Button.MouseButton1Click:Connect(function() MiniESP:Toggle() end)
+    BtnESP.Button.MouseButton1Click:Connect(function() MiniESP:Toggle() end)
 
     -- ===== BOTÃO 5: PLAYER LIST & PRIORITY =====
     local MiniPlayerlist = Window:CreateMiniUI({
