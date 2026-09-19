@@ -1,4 +1,4 @@
--- 4
+-- 4.1
 local KraviX = {}
 
 local TweenService     = game:GetService("TweenService")
@@ -1100,14 +1100,23 @@ function KraviX:CreateWindow(config)
     local HeadDotStroke = mkStroke(HeadDotDot, Color3.fromRGB(0, 0, 0), 1.5, 0)
     HeadDotStroke:SetAttribute("RelZIndex", 6)
 
-    local PreviewHighlight = Instance.new("Highlight")
-    PreviewHighlight.FillColor = C.Accent
-    PreviewHighlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-    PreviewHighlight.FillTransparency = 0.5
-    PreviewHighlight.OutlineTransparency = 0
-    PreviewHighlight.Enabled = false
-    PreviewHighlight.Adornee = ViewmodelFolder
-    PreviewHighlight.Parent = ViewmodelFolder
+    local PreviewHighlight = nil
+    local function GetPreviewHighlight()
+        if not PreviewHighlight or not pcall(function() return PreviewHighlight.Parent end) then
+            local ok, hl = pcall(function() return Instance.new("Highlight") end)
+            if ok and hl then
+                hl.FillColor = C.Accent
+                hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+                hl.FillTransparency = 0.5
+                hl.OutlineTransparency = 0
+                hl.Enabled = false
+                hl.Adornee = ViewmodelFolder
+                pcall(function() hl.Parent = ViewmodelFolder end)
+                PreviewHighlight = hl
+            end
+        end
+        return PreviewHighlight
+    end
 
     local TracerLine = Instance.new("Frame", Overlay)
     TracerLine.Size = UDim2.new(0, 1, 0, 45)
@@ -1183,8 +1192,14 @@ function KraviX:CreateWindow(config)
             conn:Disconnect()
         end
         table.clear(DescendantConnections)
+        if PreviewHighlight then
+            pcall(function() PreviewHighlight.Parent = nil end)
+        end
         ViewmodelFolder:ClearAllChildren()
-        PreviewHighlight.Parent = ViewmodelFolder
+        local hl = GetPreviewHighlight()
+        if hl then
+            pcall(function() hl.Parent = ViewmodelFolder end)
+        end
     end
 
     local function RemoveObjectFromPreview(obj)
@@ -1416,11 +1431,14 @@ function KraviX:CreateWindow(config)
         end
 
         if cfg.Highlight ~= nil or cfg.HLFillColor ~= nil or cfg.HLOutlineColor ~= nil or cfg.HLFillTrans ~= nil or cfg.HLOutTrans ~= nil then
-            if cfg.Highlight ~= nil then PreviewHighlight.Enabled = (cfg.Highlight == true) end
-            if cfg.HLFillColor ~= nil then PreviewHighlight.FillColor = cfg.HLFillColor end
-            if cfg.HLOutlineColor ~= nil then PreviewHighlight.OutlineColor = cfg.HLOutlineColor end
-            if cfg.HLFillTrans ~= nil then PreviewHighlight.FillTransparency = cfg.HLFillTrans end
-            if cfg.HLOutTrans ~= nil then PreviewHighlight.OutlineTransparency = cfg.HLOutTrans end
+            local hl = GetPreviewHighlight()
+            if hl then
+                if cfg.Highlight ~= nil then hl.Enabled = (cfg.Highlight == true) end
+                if cfg.HLFillColor ~= nil then hl.FillColor = cfg.HLFillColor end
+                if cfg.HLOutlineColor ~= nil then hl.OutlineColor = cfg.HLOutlineColor end
+                if cfg.HLFillTrans ~= nil then hl.FillTransparency = cfg.HLFillTrans end
+                if cfg.HLOutTrans ~= nil then hl.OutlineTransparency = cfg.HLOutTrans end
+            end
         end
 
         if cfg.Tracers ~= nil and TracerLine then TracerLine.Visible = cfg.Tracers end
@@ -1496,7 +1514,7 @@ function KraviX:CreateWindow(config)
         DistanceLabel       = DistLbl,
         WeaponLabel         = WeaponLbl,
         HeadDotDot          = HeadDotDot,
-        Highlight           = PreviewHighlight,
+        Highlight           = GetPreviewHighlight(),
         TracerLine          = TracerLine,
         SkeletonContainer   = SkeletonContainer,
 
@@ -1520,7 +1538,8 @@ function KraviX:CreateWindow(config)
             DistLbl.Visible = v
             WeaponLbl.Visible = v
             HeadDotDot.Visible = v
-            PreviewHighlight.Enabled = v
+            local hl = GetPreviewHighlight()
+            if hl then hl.Enabled = v end
             TracerLine.Visible = v
             SkeletonContainer.Visible = v
         end,
