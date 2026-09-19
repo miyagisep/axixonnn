@@ -1,4 +1,4 @@
--- 4.1
+-- 4
 local KraviX = {}
 
 local TweenService     = game:GetService("TweenService")
@@ -437,6 +437,225 @@ function KraviX:CreateWindow(config)
     Window.NotifySuccess = function(a, b, c, d) wrapNotif(a, b, c, "success") end
     Window.NotifyError   = function(a, b, c, d) wrapNotif(a, b, c, "error") end
     Window.NotifyInfo    = function(a, b, c, d) wrapNotif(a, b, c, "info") end
+
+    Window.Flags   = {}
+    Window.Options = {}
+    Window.Folder  = config.Folder or "KraviX/configs"
+
+    local HttpService = game:GetService("HttpService")
+
+    local function ensureConfigFolder(folderPath)
+        if not isfolder or not makefolder then return false end
+        pcall(function()
+            local parts = string.split(folderPath, "/")
+            local current = ""
+            for _, part in ipairs(parts) do
+                if part ~= "" then
+                    current = (current == "") and part or (current .. "/" .. part)
+                    if not isfolder(current) then
+                        makefolder(current)
+                    end
+                end
+            end
+        end)
+        return isfolder and isfolder(folderPath)
+    end
+
+    function Window:SaveConfig(cfgName)
+        if not cfgName or cfgName == "" then cfgName = "default" end
+        cfgName = string.gsub(cfgName, "[^%w_%-]", "")
+        if cfgName == "" then cfgName = "default" end
+
+        local folder = Window.Folder or "KraviX/configs"
+        ensureConfigFolder(folder)
+
+        local data = {}
+        for flagKey, control in pairs(Window.Options) do
+            if control and control.Value ~= nil then
+                local val = control.Value
+                if typeof(val) == "Color3" then
+                    data[flagKey] = {
+                        __type = "Color3",
+                        R = math.floor(val.R * 255 + 0.5),
+                        G = math.floor(val.G * 255 + 0.5),
+                        B = math.floor(val.B * 255 + 0.5)
+                    }
+                elseif typeof(val) == "EnumItem" then
+                    data[flagKey] = {
+                        __type = "EnumItem",
+                        EnumType = tostring(val.EnumType),
+                        Name = val.Name
+                    }
+                elseif type(val) == "table" and val.type then
+                    local vVal = val.value
+                    local strVal = typeof(vVal) == "EnumItem" and vVal.Name or tostring(vVal)
+                    data[flagKey] = {
+                        __type = "MouseKeybind",
+                        BindType = val.type,
+                        Value = strVal
+                    }
+                else
+                    data[flagKey] = val
+                end
+            end
+        end
+
+        local jsonStr
+        local encOk, err = pcall(function() jsonStr = HttpService:JSONEncode(data) end)
+        if not encOk or not jsonStr then
+            CreateNotification("KraviX Config", "Erro ao serializar config: " .. tostring(err), 3, "error")
+            return false
+        end
+
+        if writefile then
+            local filePath = folder .. "/" .. cfgName .. ".json"
+            local writeOk, writeErr = pcall(function() writefile(filePath, jsonStr) end)
+            if writeOk then
+                CreateNotification("KraviX Config", "Configuração '" .. cfgName .. "' salva com sucesso!", 3, "success")
+                return true
+            else
+                CreateNotification("KraviX Config", "Erro ao salvar arquivo: " .. tostring(writeErr), 3, "error")
+            end
+        else
+            CreateNotification("KraviX Config", "Executor não suporta writefile!", 3, "error")
+        end
+        return false
+    end
+
+    function Window:LoadConfig(cfgName)
+        if not cfgName or cfgName == "" then cfgName = "default" end
+        cfgName = string.gsub(cfgName, "[^%w_%-]", "")
+        local folder = Window.Folder or "KraviX/configs"
+        local filePath = folder .. "/" .. cfgName .. ".json"
+
+        if not readfile or not isfile or not isfile(filePath) then
+            CreateNotification("KraviX Config", "Configuração '" .. cfgName .. "' não encontrada!", 3, "error")
+            return false
+        end
+
+        local fileContent
+        local readOk, readErr = pcall(function() fileContent = readfile(filePath) end)
+        if not readOk or not fileContent then
+            CreateNotification("KraviX Config", "Erro ao ler config: " .. tostring(readErr), 3, "error")
+            return false
+        end
+
+        local decoded
+        local decOk, decErr = pcall(function() decoded = HttpService:JSONDecode(fileContent) end)
+        if not decOk or type(decoded) ~= "table" then
+            CreateNotification("KraviX Config", "Arquivo de config corrompido!", 3, "error")
+            return false
+        end
+
+        local loadedCount = 0
+        for flagKey, savedVal in pairs(decoded) do
+            local control = Window.Options[flagKey]
+            if control and control.Set then
+                pcall(function()
+                    if type(savedVal) == "table" and savedVal.__type then
+                        if savedVal.__type == "Color3" then
+                            control:Set(Color3.fromRGB(savedVal.R or 255, savedVal.G or 255, savedVal.B or 255))
+                        elseif savedVal.__type == "EnumItem" then
+                            if Enum.KeyCode[savedVal.Name] then
+                                control:Set(Enum.KeyCode[savedVal.Name])
+                            end
+                        elseif savedVal.__type == "MouseKeybind" then
+                            local bVal
+                            if savedVal.BindType == "mouse" then
+                                bVal = Enum.UserInputType[savedVal.Value] or Enum.UserInputType.MouseButton2
+                            else
+                                bVal = Enum.KeyCode[savedVal.Value] or Enum.KeyCode.E
+                            end
+                            control:Set({type = savedVal.BindType, value = bVal})
+                        end
+                    else
+                        control:Set(savedVal)
+                    end
+                    loadedCount = loadedCount + 1
+                end)
+            end
+        end
+
+        CreateNotification("KraviX Config", "Configuração '" .. cfgName .. "' carregada com sucesso! (" .. loadedCount .. " opções)", 3, "success")
+        return true
+    end
+
+    function Window:DeleteConfig(cfgName)
+        if not cfgName or cfgName == "" then return false end
+        cfgName = string.gsub(cfgName, "[^%w_%-]", "")
+        local folder = Window.Folder or "KraviX/configs"
+        local filePath = folder .. "/" .. cfgName .. ".json"
+
+        if isfile and isfile(filePath) and delfile then
+            local delOk, err = pcall(function() delfile(filePath) end)
+            if delOk then
+                CreateNotification("KraviX Config", "Configuração '" .. cfgName .. "' deletada!", 3, "info")
+                return true
+            else
+                CreateNotification("KraviX Config", "Erro ao deletar: " .. tostring(err), 3, "error")
+            end
+        else
+            CreateNotification("KraviX Config", "Arquivo não encontrado para deletar!", 3, "error")
+        end
+        return false
+    end
+
+    function Window:GetConfigs()
+        local folder = Window.Folder or "KraviX/configs"
+        ensureConfigFolder(folder)
+        local list = {}
+        if listfiles then
+            pcall(function()
+                local files = listfiles(folder)
+                for _, f in ipairs(files) do
+                    if string.sub(f, -5) == ".json" then
+                        local fname = string.gsub(f, "\\", "/")
+                        fname = string.match(fname, "[^/]+$") or fname
+                        fname = string.sub(fname, 1, #fname - 5)
+                        if fname ~= "autoload_config" then
+                            table.insert(list, fname)
+                        end
+                    end
+                end
+            end)
+        end
+        table.sort(list)
+        return list
+    end
+
+    function Window:SetAutoLoad(cfgName)
+        local folder = Window.Folder or "KraviX/configs"
+        ensureConfigFolder(folder)
+        local autoFile = folder .. "/autoload_config.txt"
+        if writefile then
+            pcall(function() writefile(autoFile, cfgName or "") end)
+            if cfgName and cfgName ~= "" then
+                CreateNotification("KraviX Config", "Auto Load definido para '" .. cfgName .. "'", 3, "success")
+            else
+                CreateNotification("KraviX Config", "Auto Load desativado!", 3, "info")
+            end
+        end
+    end
+
+    function Window:GetAutoLoad()
+        local folder = Window.Folder or "KraviX/configs"
+        local autoFile = folder .. "/autoload_config.txt"
+        if readfile and isfile and isfile(autoFile) then
+            local val
+            pcall(function() val = readfile(autoFile) end)
+            return val and string.gsub(val, "%s+", "") or ""
+        end
+        return ""
+    end
+
+    function Window:LoadAutoLoad()
+        local autoName = Window:GetAutoLoad()
+        if autoName and autoName ~= "" then
+            task.defer(function()
+                Window:LoadConfig(autoName)
+            end)
+        end
+    end
 
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "KraviX"; ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
@@ -968,45 +1187,10 @@ function KraviX:CreateWindow(config)
         end
     end
 
-    -- Top Header Control Bar (Reset View Button)
-    local TopHeader = Instance.new("Frame", MiniPlayers.Body)
-    TopHeader.Size = UDim2.new(1, 0, 0, 28)
-    TopHeader.BackgroundTransparency = 1
-    TopHeader.ZIndex = MiniPlayers.Frame.ZIndex + 2
-    TopHeader:SetAttribute("RelZIndex", 2)
-
-    local ResetCamBtn = Instance.new("TextButton", TopHeader)
-    ResetCamBtn.Size = UDim2.new(1, 0, 1, 0)
-    ResetCamBtn.Position = UDim2.new(0, 0, 0, 0)
-    ResetCamBtn.BackgroundColor3 = Color3.fromRGB(18, 12, 28)
-    ResetCamBtn.Text = "📷 Reset Camera View"
-    ResetCamBtn.TextColor3 = Color3.fromRGB(220, 220, 230)
-    ResetCamBtn.TextSize = 11
-    ResetCamBtn.Font = Enum.Font.GothamBold
-    ResetCamBtn.AutoButtonColor = false
-    ResetCamBtn.ZIndex = MiniPlayers.Frame.ZIndex + 2
-    ResetCamBtn:SetAttribute("RelZIndex", 2)
-    mkCorner(ResetCamBtn, 6)
-    local rstStroke = mkStroke(ResetCamBtn, Color3.fromRGB(48, 28, 70), 1, 0)
-    rstStroke:SetAttribute("RelZIndex", 2)
-
-    ResetCamBtn.MouseEnter:Connect(function() Tween(ResetCamBtn, {BackgroundColor3 = C.Accent, TextColor3 = C.White}, 0.1):Play() end)
-    ResetCamBtn.MouseLeave:Connect(function() Tween(ResetCamBtn, {BackgroundColor3 = Color3.fromRGB(18, 12, 28), TextColor3 = Color3.fromRGB(220, 220, 230)}, 0.1):Play() end)
-
-    ResetCamBtn.MouseButton1Click:Connect(function()
-        _G.KraviX_ViewingPlayer = nil
-        pcall(function()
-            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
-                workspace.CurrentCamera.CameraSubject = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-            end
-        end)
-        CreateNotification("Camera", "Visão da câmera resetada.", 3, "info")
-    end)
-
     -- Sub Stats Indicator Bar
     local StatsBar = Instance.new("Frame", MiniPlayers.Body)
-    StatsBar.Size = UDim2.new(1, 0, 0, 18)
-    StatsBar.Position = UDim2.new(0, 0, 0, 32)
+    StatsBar.Size = UDim2.new(1, 0, 0, 20)
+    StatsBar.Position = UDim2.new(0, 0, 0, 0)
     StatsBar.BackgroundTransparency = 1
     StatsBar.ZIndex = MiniPlayers.Frame.ZIndex + 2
     StatsBar:SetAttribute("RelZIndex", 2)
@@ -1024,8 +1208,8 @@ function KraviX:CreateWindow(config)
 
     -- Scrolling Frame para os cards dos players
     local PlayerScroll = Instance.new("ScrollingFrame", MiniPlayers.Body)
-    PlayerScroll.Size = UDim2.new(1, 0, 1, -54)
-    PlayerScroll.Position = UDim2.new(0, 0, 0, 54)
+    PlayerScroll.Size = UDim2.new(1, 0, 1, -26)
+    PlayerScroll.Position = UDim2.new(0, 0, 0, 26)
     PlayerScroll.BackgroundTransparency = 1
     PlayerScroll.BorderSizePixel = 0
     PlayerScroll.ScrollBarThickness = 3
@@ -1245,18 +1429,172 @@ function KraviX:CreateWindow(config)
 
     -- ===== BOTÃO 3: CONFIGURATIONS =====
     local MiniConfigs = Window:CreateMiniUI({
-        Title = "Configurations", Width = 280, Height = 175,
-        DefaultPosition = UDim2.new(0.5, 20, 0.5, -90),
+        Title = "Configurations", Width = 300, Height = 310,
+        DefaultPosition = UDim2.new(0.5, 20, 0.5, -155),
         OnToggle = function(on) BtnCloud.SetActive(on) end
     })
+
     MiniConfigs:AddLabel("Gerenciador de Configurações (.cfg)", C.Sub)
+    
     local cfgBox = MiniConfigs:AddTextbox("Nome da config...", "default", function() end)
-    MiniConfigs:AddButton("Salvar Configuração", function()
-        CreateNotification("KraviX", "Config '" .. (cfgBox.Text ~= "" and cfgBox.Text or "default") .. "' salva!", 3, "success")
+
+    local selectedConfig = "default"
+
+    MiniConfigs:AddLabel("Configs Encontradas:", C.Sub)
+
+    local ConfigSelectBtn = MiniConfigs:AddButton("Config: default", function() end)
+
+    -- Row 1: Save & Load
+    local Row1 = Instance.new("Frame", MiniConfigs.Body)
+    Row1.Size = UDim2.new(1, 0, 0, 26)
+    Row1.BackgroundTransparency = 1
+    Row1.ZIndex = MiniConfigs.Frame.ZIndex + 2
+    Row1:SetAttribute("RelZIndex", 2)
+    local R1List = Instance.new("UIListLayout", Row1)
+    R1List.FillDirection = Enum.FillDirection.Horizontal
+    R1List.Padding = UDim.new(0, 6)
+
+    local SaveBtn = Instance.new("TextButton", Row1)
+    SaveBtn.Size = UDim2.new(0.5, -3, 1, 0)
+    SaveBtn.BackgroundColor3 = Color3.fromRGB(24, 16, 40)
+    SaveBtn.Text = "Salvar Config"
+    SaveBtn.TextColor3 = C.White
+    SaveBtn.TextSize = 11
+    SaveBtn.Font = Enum.Font.GothamBold
+    SaveBtn.AutoButtonColor = false
+    SaveBtn.ZIndex = MiniConfigs.Frame.ZIndex + 3
+    SaveBtn:SetAttribute("RelZIndex", 3)
+    mkCorner(SaveBtn, 6)
+    local sSt = mkStroke(SaveBtn, C.Accent, 1, 0)
+    sSt:SetAttribute("RelZIndex", 3)
+
+    local LoadBtn = Instance.new("TextButton", Row1)
+    LoadBtn.Size = UDim2.new(0.5, -3, 1, 0)
+    LoadBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
+    LoadBtn.Text = "Carregar Config"
+    LoadBtn.TextColor3 = C.White
+    LoadBtn.TextSize = 11
+    LoadBtn.Font = Enum.Font.GothamBold
+    LoadBtn.AutoButtonColor = false
+    LoadBtn.ZIndex = MiniConfigs.Frame.ZIndex + 3
+    LoadBtn:SetAttribute("RelZIndex", 3)
+    mkCorner(LoadBtn, 6)
+    local lSt = mkStroke(LoadBtn, Color3.fromRGB(45, 45, 58), 1, 0)
+    lSt:SetAttribute("RelZIndex", 3)
+
+    -- Row 2: Delete & Refresh
+    local Row2 = Instance.new("Frame", MiniConfigs.Body)
+    Row2.Size = UDim2.new(1, 0, 0, 26)
+    Row2.BackgroundTransparency = 1
+    Row2.ZIndex = MiniConfigs.Frame.ZIndex + 2
+    Row2:SetAttribute("RelZIndex", 2)
+    local R2List = Instance.new("UIListLayout", Row2)
+    R2List.FillDirection = Enum.FillDirection.Horizontal
+    R2List.Padding = UDim.new(0, 6)
+
+    local DelBtn = Instance.new("TextButton", Row2)
+    DelBtn.Size = UDim2.new(0.5, -3, 1, 0)
+    DelBtn.BackgroundColor3 = Color3.fromRGB(35, 15, 15)
+    DelBtn.Text = "Deletar Config"
+    DelBtn.TextColor3 = Color3.fromRGB(240, 150, 150)
+    DelBtn.TextSize = 11
+    DelBtn.Font = Enum.Font.GothamBold
+    DelBtn.AutoButtonColor = false
+    DelBtn.ZIndex = MiniConfigs.Frame.ZIndex + 3
+    DelBtn:SetAttribute("RelZIndex", 3)
+    mkCorner(DelBtn, 6)
+    local dSt = mkStroke(DelBtn, Color3.fromRGB(80, 30, 30), 1, 0)
+    dSt:SetAttribute("RelZIndex", 3)
+
+    local RefBtn = Instance.new("TextButton", Row2)
+    RefBtn.Size = UDim2.new(0.5, -3, 1, 0)
+    RefBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
+    RefBtn.Text = "Atualizar Lista"
+    RefBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+    RefBtn.TextSize = 11
+    RefBtn.Font = Enum.Font.GothamBold
+    RefBtn.AutoButtonColor = false
+    RefBtn.ZIndex = MiniConfigs.Frame.ZIndex + 3
+    RefBtn:SetAttribute("RelZIndex", 3)
+    mkCorner(RefBtn, 6)
+    local rSt = mkStroke(RefBtn, Color3.fromRGB(45, 45, 58), 1, 0)
+    rSt:SetAttribute("RelZIndex", 3)
+
+    local isUpdatingAutoToggle = false
+    local AutoLoadToggle = MiniConfigs:AddToggle("Definir como Auto-Load", false, function(state)
+        if isUpdatingAutoToggle then return end
+        local name = (cfgBox.Text ~= "" and cfgBox.Text or selectedConfig)
+        if state then
+            Window:SetAutoLoad(name)
+        else
+            Window:SetAutoLoad("")
+        end
     end)
-    MiniConfigs:AddButton("Carregar Configuração", function()
-        CreateNotification("KraviX", "Config '" .. (cfgBox.Text ~= "" and cfgBox.Text or "default") .. "' carregada!", 3, "info")
+
+    local currentConfigList = {}
+    local function refreshConfigUI()
+        currentConfigList = Window:GetConfigs()
+        if #currentConfigList == 0 then
+            ConfigSelectBtn.Text = "Nenhuma config salva"
+        else
+            if not table.find(currentConfigList, selectedConfig) then
+                selectedConfig = currentConfigList[1]
+            end
+            ConfigSelectBtn.Text = "Config: " .. selectedConfig
+        end
+
+        local autoCfg = Window:GetAutoLoad()
+        isUpdatingAutoToggle = true
+        if autoCfg ~= "" and autoCfg == selectedConfig then
+            AutoLoadToggle:Set(true)
+        else
+            AutoLoadToggle:Set(false)
+        end
+        isUpdatingAutoToggle = false
+    end
+
+    ConfigSelectBtn.MouseButton1Click:Connect(function()
+        if #currentConfigList == 0 then
+            refreshConfigUI()
+            return
+        end
+        local idx = table.find(currentConfigList, selectedConfig) or 1
+        idx = idx + 1
+        if idx > #currentConfigList then idx = 1 end
+        selectedConfig = currentConfigList[idx]
+        cfgBox.Text = selectedConfig
+        refreshConfigUI()
     end)
+
+    SaveBtn.MouseButton1Click:Connect(function()
+        local name = cfgBox.Text ~= "" and cfgBox.Text or selectedConfig
+        if Window:SaveConfig(name) then
+            selectedConfig = name
+            refreshConfigUI()
+        end
+    end)
+
+    LoadBtn.MouseButton1Click:Connect(function()
+        local name = cfgBox.Text ~= "" and cfgBox.Text or selectedConfig
+        if Window:LoadConfig(name) then
+            selectedConfig = name
+            refreshConfigUI()
+        end
+    end)
+
+    DelBtn.MouseButton1Click:Connect(function()
+        local name = cfgBox.Text ~= "" and cfgBox.Text or selectedConfig
+        if Window:DeleteConfig(name) then
+            refreshConfigUI()
+        end
+    end)
+
+    RefBtn.MouseButton1Click:Connect(function()
+        refreshConfigUI()
+        CreateNotification("KraviX Config", "Lista de configurações atualizada!", 2, "info")
+    end)
+
+    task.defer(refreshConfigUI)
     BtnCloud.Button.MouseButton1Click:Connect(function() MiniConfigs:Toggle() end)
 
     -- ===== BOTÃO 4: REAL 3D VIEWPORT ESP PREVIEW =====
@@ -2204,6 +2542,7 @@ function KraviX:CreateWindow(config)
                     cfg = cfg or {}
                     local toggled  = cfg.Default  or false
                     local callback = cfg.Callback or function() end
+                    local flagKey  = cfg.Flag or cfg.Name
 
                     local Row = Instance.new("Frame")
                     Row.Size = UDim2.new(1,0,0,26); Row.BackgroundTransparency = 1
@@ -2240,6 +2579,7 @@ function KraviX:CreateWindow(config)
                         Tween(Lbl,{TextColor3=v and C.Text or C.Sub},0.1):Play()
                         local st = Box:FindFirstChildOfClass("UIStroke")
                         if st then Tween(st,{Color=v and C.Accent or C.BorderBt},0.1):Play() end
+                        if flagKey then Window.Flags[flagKey] = v end
                     end
 
                     local Hit = Instance.new("TextButton", Row)
@@ -2256,6 +2596,10 @@ function KraviX:CreateWindow(config)
                     end)
 
                     function Toggle:Set(v) Toggle.Value=v; Update(); callback(v) end
+                    if flagKey then
+                        Window.Options[flagKey] = Toggle
+                        Window.Flags[flagKey]   = Toggle.Value
+                    end
                     AddItem(Row); return Toggle
                 end
 
@@ -2264,6 +2608,7 @@ function KraviX:CreateWindow(config)
                     local min = cfg.Min or 0; local max = cfg.Max or 100
                     local val = cfg.Default or min; local rnd = cfg.Rounding or 0
                     local callback = cfg.Callback or function() end
+                    local flagKey  = cfg.Flag or cfg.Name
 
                     local Row = Instance.new("Frame")
                     Row.Size = UDim2.new(1,0,0,38); Row.BackgroundTransparency = 1; Row.ZIndex = 13
@@ -2309,6 +2654,7 @@ function KraviX:CreateWindow(config)
                         local nv  = Round(min+(max-min)*pct)
                         Slider.Value = nv; ValLbl.Text = tostring(nv)
                         Fill.Size = UDim2.new(pct,0,1,0); callback(nv)
+                        if flagKey then Window.Flags[flagKey] = nv end
                     end
                     local drag = false
                     SliderBtn.InputBegan:Connect(function(i)
@@ -2328,6 +2674,11 @@ function KraviX:CreateWindow(config)
                         v = math.clamp(Round(v),min,max); Slider.Value = v
                         ValLbl.Text = tostring(v)
                         Fill.Size = UDim2.new((v-min)/(max-min),0,1,0); callback(v)
+                        if flagKey then Window.Flags[flagKey] = v end
+                    end
+                    if flagKey then
+                        Window.Options[flagKey] = Slider
+                        Window.Flags[flagKey]   = Slider.Value
                     end
                     task.defer(function() callback(val) end)
                     AddItem(Row); return Slider
@@ -2338,6 +2689,7 @@ function KraviX:CreateWindow(config)
                     local options  = cfg.Values  or {}
                     local selected = cfg.Default or options[1]
                     local callback = cfg.Callback or function() end
+                    local flagKey  = cfg.Flag or cfg.Name
                     local opened   = false
 
                     local Wrap = Instance.new("Frame")
@@ -2420,6 +2772,7 @@ function KraviX:CreateWindow(config)
                             opened = false; DFrame.Visible = false; _hover = false
                             Tween(Arrow,{Rotation=0},0.15):Play()
                             if prev ~= opt then callback(opt) end
+                            if flagKey then Window.Flags[flagKey] = opt end
                         end)
                     end
 
@@ -2468,9 +2821,14 @@ function KraviX:CreateWindow(config)
                                 b.BackgroundTransparency = o==v and 0.5 or 1
                             end
                             callback(v)
+                            if flagKey then Window.Flags[flagKey] = v end
                         end
                     end
 
+                    if flagKey then
+                        Window.Options[flagKey] = Dropdown
+                        Window.Flags[flagKey]   = Dropdown.Value
+                    end
                     if selected then task.defer(function() callback(selected) end) end
                     AddItem(Wrap); return Dropdown
                 end
@@ -2536,6 +2894,7 @@ function KraviX:CreateWindow(config)
                     cfg = cfg or {}
                     local cur = cfg.Default or Enum.KeyCode.E; local listen = false
                     local callback = cfg.Callback or function() end
+                    local flagKey  = cfg.Flag or cfg.Name
                     local Row = Instance.new("Frame")
                     Row.Size = UDim2.new(1,0,0,26); Row.BackgroundTransparency = 1; Row.ZIndex = 13
                     local Lbl = Instance.new("TextLabel", Row)
@@ -2546,7 +2905,7 @@ function KraviX:CreateWindow(config)
                     local KB = Instance.new("TextButton", Row)
                     KB.Size = UDim2.new(0,46,0,20); KB.AnchorPoint = Vector2.new(1,0.5)
                     KB.Position = UDim2.new(1,0,0.5,0)
-                    KB.BackgroundColor3 = Color3.fromRGB(20,20,20); KB.Text = cur.Name
+                    KB.BackgroundColor3 = Color3.fromRGB(20,20,20); KB.Text = cur and cur.Name or "None"
                     KB.TextColor3 = C.Sub; KB.TextSize = 9; KB.Font = Enum.Font.Code
                     KB.AutoButtonColor = false; KB.ZIndex = 14; mkCorner(KB,4); mkStroke(KB,C.BorderBt,1,0)
                     local Keybind = {Value=cur}
@@ -2556,12 +2915,24 @@ function KraviX:CreateWindow(config)
                     UserInputService.InputBegan:Connect(function(inp,proc)
                         if listen and not proc and inp.UserInputType==Enum.UserInputType.Keyboard then
                             if inp.KeyCode==Enum.KeyCode.Escape then
-                                listen=false; KB.Text=cur.Name; KB.TextColor3=C.Sub; return
+                                listen=false; KB.Text=cur and cur.Name or "None"; KB.TextColor3=C.Sub; return
                             end
                             listen=false; cur=inp.KeyCode; Keybind.Value=cur
                             KB.Text=cur.Name; KB.TextColor3=C.Sub; callback(cur)
+                            if flagKey then Window.Flags[flagKey] = cur end
                         end
                     end)
+                    function Keybind:Set(v)
+                        if typeof(v) == "string" then
+                            v = Enum.KeyCode[v] or Enum.KeyCode.E
+                        end
+                        cur = v; Keybind.Value = cur; KB.Text = cur and cur.Name or "None"; KB.TextColor3 = C.Sub; callback(cur)
+                        if flagKey then Window.Flags[flagKey] = cur end
+                    end
+                    if flagKey then
+                        Window.Options[flagKey] = Keybind
+                        Window.Flags[flagKey]   = Keybind.Value
+                    end
                     AddItem(Row); return Keybind
                 end
 
@@ -2573,6 +2944,7 @@ function KraviX:CreateWindow(config)
                     local listen     = false
                     local _ignoreNext = false
                     local callback   = cfg.Callback or function() end
+                    local flagKey    = cfg.Flag or cfg.Name
                     local function bindLabel(b)
                         if not b then return "None" end
                         if b.type == "mouse" then return MOUSE_NAMES[b.value] or "Mouse?" end
@@ -2621,11 +2993,17 @@ function KraviX:CreateWindow(config)
                         end
                         listen = false; Bind.Value = cur
                         KB.Text = bindLabel(cur); KB.TextColor3 = C.Sub; callback(cur)
+                        if flagKey then Window.Flags[flagKey] = cur end
                     end)
                     function Bind:Set(b)
                         if type(b) == "table" and b.type then cur = b
                         else cur = {type="key",value=b} end
                         Bind.Value = cur; KB.Text = bindLabel(cur); KB.TextColor3 = C.Sub; callback(cur)
+                        if flagKey then Window.Flags[flagKey] = cur end
+                    end
+                    if flagKey then
+                        Window.Options[flagKey] = Bind
+                        Window.Flags[flagKey]   = Bind.Value
                     end
                     AddItem(Row); return Bind
                 end
@@ -2634,6 +3012,7 @@ function KraviX:CreateWindow(config)
                     cfg = cfg or {}
                     local color    = cfg.Default  or C.Accent
                     local callback = cfg.Callback or function() end
+                    local flagKey  = cfg.Flag or cfg.Name
 
                     local Row = Instance.new("Frame")
                     Row.Size = UDim2.new(1,0,0,26); Row.BackgroundTransparency = 1; Row.ZIndex = 13
@@ -2789,6 +3168,7 @@ function KraviX:CreateWindow(config)
                                        ..math.floor(c.G*255)..","
                                        ..math.floor(c.B*255)
                         callback(c)
+                        if flagKey then Window.Flags[flagKey] = c end
                     end
 
                     HexBox.FocusLost:Connect(function(enter)
@@ -2880,10 +3260,16 @@ function KraviX:CreateWindow(config)
                         pickerOpen = false; PF.Visible = false
                     end)
 
+                    if flagKey then
+                        Window.Options[flagKey] = Picker
+                        Window.Flags[flagKey]   = Picker.Value
+                    end
+
                     task.defer(function() callback(color) end)
 
                     function Picker:Set(c)
                         Picker.Value = c; ph,ps,pv = c:ToHSV(); UpdateAll()
+                        if flagKey then Window.Flags[flagKey] = c end
                     end
 
                     AddItem(Row); return Picker
