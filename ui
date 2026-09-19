@@ -1,4 +1,4 @@
--- 4
+-- 4.1
 local KraviX = {}
 
 local TweenService     = game:GetService("TweenService")
@@ -700,11 +700,10 @@ function KraviX:CreateWindow(config)
         }
     end
 
-    local BtnHome  = createDockBtn({Icon = "rbxassetid://6031075931", Text = "H", Active = true})
-    local BtnESP   = createDockBtn({Icon = "rbxassetid://6031097229", Text = "E", Active = false})
+    local BtnHome  = createDockBtn({Icon = "rbxassetid://6026568198", Text = "H", Active = true})
+    local BtnESP   = createDockBtn({Icon = "rbxassetid://6031075931", Text = "E", Active = false})
     local BtnTheme = createDockBtn({Icon = "rbxassetid://6034287525", Text = "T", Active = false})
     local BtnCloud = createDockBtn({Icon = "rbxassetid://6031280882", Text = "C", Active = false})
-    local BtnGroup = createDockBtn({Icon = "rbxassetid://6031082533", Text = "G", Active = false})
 
     local SidePanel = DockOutline
     Window._SidePanel = DockOutline
@@ -715,7 +714,6 @@ function KraviX:CreateWindow(config)
     Window._BtnESP    = BtnESP
     Window._BtnTheme  = BtnTheme
     Window._BtnCloud  = BtnCloud
-    Window._BtnGroup  = BtnGroup
 
     function Window:CreateDockButton(opts)
         return createDockBtn(opts)
@@ -933,16 +931,16 @@ function KraviX:CreateWindow(config)
     end)
     BtnCloud.Button.MouseButton1Click:Connect(function() MiniConfigs:Toggle() end)
 
-    -- ===== BOTÃO 2: REAL 3D VIEWPORT ESP PREVIEW & VISUALS (COM EYE ICON) =====
+    -- ===== BOTÃO 2: REAL 3D VIEWPORT ESP PREVIEW & VISUALS =====
     local MiniESP = Window:CreateMiniUI({
-        Title = "ESP PREVIEW", Width = 250, Height = 340,
+        Title = "ESP PREVIEW", Width = 260, Height = 360,
         OnToggle = function(on) BtnESP.SetActive(on) end
     })
-    MiniESP:AddLabel("Preview Interativo do Seu Personagem", C.Sub)
+    MiniESP:AddLabel("Preview Real do Seu Personagem em 3D", C.Sub)
 
     local VFrame = Instance.new("ViewportFrame", MiniESP.Body)
-    VFrame.Size = UDim2.new(1, 0, 0, 190)
-    VFrame.BackgroundColor3 = Color3.fromRGB(12, 12, 16)
+    VFrame.Size = UDim2.new(1, 0, 0, 210)
+    VFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 14)
     VFrame.BorderSizePixel = 0
     VFrame.ZIndex = 252
     VFrame.LightColor = Color3.fromRGB(255, 255, 255)
@@ -951,7 +949,14 @@ function KraviX:CreateWindow(config)
     mkCorner(VFrame, 6)
     mkStroke(VFrame, C.BorderBt, 1, 0)
 
-    local WModel = Instance.new("WorldModel", VFrame)
+    local ViewportCamera = Instance.new("Camera")
+    VFrame.CurrentCamera = ViewportCamera
+    ViewportCamera.CameraType = Enum.CameraType.Track
+    ViewportCamera.Focus = CFrame.new(0, 0, 0)
+    ViewportCamera.CFrame = CFrame.new(0, 2.5, -8.5)
+
+    local ViewmodelFolder = Instance.new("Model", VFrame)
+    ViewmodelFolder.Name = "Viewmodel"
 
     local Overlay = Instance.new("Frame", VFrame)
     Overlay.Size = UDim2.new(1, 0, 1, 0)
@@ -959,8 +964,8 @@ function KraviX:CreateWindow(config)
     Overlay.ZIndex = 255
 
     local EspBox = Instance.new("Frame", Overlay)
-    EspBox.Size = UDim2.new(0, 88, 0, 140)
-    EspBox.Position = UDim2.new(0.5, -44, 0.5, -70)
+    EspBox.Size = UDim2.new(0, 96, 0, 150)
+    EspBox.Position = UDim2.new(0.5, -48, 0.5, -75)
     EspBox.BackgroundTransparency = 1
     EspBox.ZIndex = 260
     local espBoxStroke = mkStroke(EspBox, C.Accent, 1, 0)
@@ -978,133 +983,152 @@ function KraviX:CreateWindow(config)
     NameLbl.Size = UDim2.new(1, 60, 0, 14)
     NameLbl.Position = UDim2.new(0.5, -30, 0, -16)
     NameLbl.BackgroundTransparency = 1
-    NameLbl.Text = (LocalPlayer and LocalPlayer.DisplayName or "Player") .. " [35m]"
+    NameLbl.Text = (LocalPlayer and LocalPlayer.DisplayName or "Player")
     NameLbl.TextColor3 = C.White
     NameLbl.TextSize = 9
     NameLbl.Font = Enum.Font.Code
     NameLbl.TextXAlignment = Enum.TextXAlignment.Center
     NameLbl.ZIndex = 262
 
+    local DistLbl = Instance.new("TextLabel", EspBox)
+    DistLbl.Size = UDim2.new(1, 60, 0, 14)
+    DistLbl.Position = UDim2.new(0.5, -30, 1, 2)
+    DistLbl.BackgroundTransparency = 1
+    DistLbl.Text = "[35m]"
+    DistLbl.TextColor3 = C.Sub
+    DistLbl.TextSize = 9
+    DistLbl.Font = Enum.Font.Code
+    DistLbl.TextXAlignment = Enum.TextXAlignment.Center
+    DistLbl.ZIndex = 262
+
     local TracerLine = Instance.new("Frame", Overlay)
-    TracerLine.Size = UDim2.new(0, 1, 0, 20)
-    TracerLine.Position = UDim2.new(0.5, 0, 1, -20)
+    TracerLine.Size = UDim2.new(0, 1, 0, 30)
+    TracerLine.Position = UDim2.new(0.5, 0, 1, -30)
     TracerLine.BackgroundColor3 = C.Accent
     TracerLine.BorderSizePixel = 0
     TracerLine.ZIndex = 262
     TracerLine.Visible = false
 
-    local charModel = nil
-    local partCFrames = {}
-    local origColors = {}
-    local origMaterials = {}
-    local chamsActive = false
+    local RenderObjects = {}
+    local DescendantConnections = {}
+    local CurrentPreviewModel = nil
+    local OFFSET = CFrame.new(0, 2.5, -8.5)
+    local ChamsActive = false
+    local ChamColor = C.Accent
 
-    local function loadCharacterPreview()
-        WModel:ClearAllChildren()
-        partCFrames = {}
-        origColors = {}
-        origMaterials = {}
+    local ValidClasses = {
+        MeshPart = true,
+        Part = true,
+        Accoutrement = true,
+        Pants = true,
+        Shirt = true,
+        Humanoid = true,
+        Highlight = true
+    }
 
-        local realChar = LocalPlayer and (LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait())
-        if realChar then
-            local root = realChar:FindFirstChild("HumanoidRootPart") or realChar:FindFirstChild("Torso") or realChar.PrimaryPart
-            if not root then
-                root = realChar:WaitForChild("HumanoidRootPart", 3)
-            end
-            if root then
-                pcall(function()
-                    realChar.Archivable = true
-                    for _, obj in ipairs(realChar:GetDescendants()) do
-                        obj.Archivable = true
-                    end
-                end)
-
-                local ok, clone = pcall(function() return realChar:Clone() end)
-                if ok and clone then
-                    charModel = clone
-                    local realRootCF = root.CFrame
-
-                    for _, obj in ipairs(charModel:GetDescendants()) do
-                        if obj:IsA("Script") or obj:IsA("LocalScript") or obj:IsA("ModuleScript") or obj:IsA("Sound") or obj:IsA("Animate") then
-                            obj:Destroy()
-                        elseif obj:IsA("BasePart") then
-                            obj.Anchored = true
-                            obj.CanCollide = false
-                            partCFrames[obj] = realRootCF:ToObjectSpace(obj.CFrame)
-                            origColors[obj] = obj.Color
-                            origMaterials[obj] = obj.Material
-                        end
-                    end
-                end
-            end
+    local function ClearPreviewObjects()
+        table.clear(RenderObjects)
+        for _, conn in ipairs(DescendantConnections) do
+            conn:Disconnect()
         end
+        table.clear(DescendantConnections)
+        ViewmodelFolder:ClearAllChildren()
+    end
 
-        if not charModel or not charModel:FindFirstChildOfClass("BasePart") then
-            charModel = Instance.new("Model")
-            charModel.Name = "Dummy"
-            local function makeDummyPart(name, size, pos, color)
-                local p = Instance.new("Part", charModel)
-                p.Name = name; p.Size = size; p.Position = pos
-                p.Color = color or Color3.fromRGB(150, 150, 160)
-                p.Material = Enum.Material.SmoothPlastic
-                p.Anchored = true; p.CanCollide = false
-                partCFrames[p] = CFrame.new(pos)
-                origColors[p] = p.Color
-                origMaterials[p] = p.Material
-                return p
-            end
-            local hrp   = makeDummyPart("HumanoidRootPart", Vector3.new(2, 2, 1), Vector3.new(0, 0, 0))
-            local head  = makeDummyPart("Head", Vector3.new(1.2, 1.2, 1.2), Vector3.new(0, 1.8, 0))
-            local torso = makeDummyPart("Torso", Vector3.new(2, 2, 1), Vector3.new(0, 0.2, 0))
-            local lArm  = makeDummyPart("Left Arm", Vector3.new(1, 2, 1), Vector3.new(-1.6, 0.2, 0))
-            local rArm  = makeDummyPart("Right Arm", Vector3.new(1, 2, 1), Vector3.new(1.6, 0.2, 0))
-            local lLeg  = makeDummyPart("Left Leg", Vector3.new(1, 2, 1), Vector3.new(-0.5, -1.8, 0))
-            local rLeg  = makeDummyPart("Right Leg", Vector3.new(1, 2, 1), Vector3.new(0.5, -1.8, 0))
-            charModel.PrimaryPart = hrp
-        end
-
-        charModel.Parent = WModel
-
-        local Cam = Instance.new("Camera")
-        Cam.FieldOfView = 48
-        Cam.CFrame = CFrame.new(Vector3.new(0, 0.1, 7.8), Vector3.new(0, 0.1, 0))
-        VFrame.CurrentCamera = Cam
-        Cam.Parent = VFrame
-
-        if NameLbl then
-            NameLbl.Text = (LocalPlayer and LocalPlayer.DisplayName or "Player") .. " [35m]"
-        end
-
-        if chamsActive then
-            for p, _ in pairs(partCFrames) do
-                if p and p.Parent then
-                    p.Color = C.Accent
-                    p.Material = Enum.Material.Neon
-                end
-            end
+    local function RemoveObjectFromPreview(obj)
+        local clone = RenderObjects[obj]
+        if not clone then return end
+        RenderObjects[obj] = nil
+        if clone.Parent and clone.Parent:IsA("Accoutrement") then
+            clone.Parent:Destroy()
+        else
+            clone:Destroy()
         end
     end
 
+    local function AddObjectToPreview(obj)
+        if not obj or not ValidClasses[obj.ClassName] then return end
+
+        local isArch = obj.Archivable
+        obj.Archivable = true
+        local ok, clone = pcall(function() return obj:Clone() end)
+        obj.Archivable = isArch
+
+        if not ok or not clone then return end
+
+        if obj:IsA("BasePart") then
+            clone.Anchored = true
+            clone.CanCollide = false
+            RenderObjects[obj] = clone
+            if ChamsActive then
+                clone.Color = ChamColor
+                clone.Material = Enum.Material.Neon
+            end
+        elseif obj:IsA("Accoutrement") then
+            if obj:FindFirstChild("Handle") and clone:FindFirstChild("Handle") then
+                clone.Handle.Anchored = true
+                clone.Handle.CanCollide = false
+                RenderObjects[obj.Handle] = clone.Handle
+                if ChamsActive then
+                    clone.Handle.Color = ChamColor
+                    clone.Handle.Material = Enum.Material.Neon
+                end
+            end
+        elseif obj:IsA("Humanoid") then
+            clone.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+        end
+
+        return clone
+    end
+
+    local function BuildPreviewFromModel(model)
+        ClearPreviewObjects()
+        CurrentPreviewModel = model
+        if not model then return end
+
+        for _, object in ipairs(model:GetDescendants()) do
+            local clone = AddObjectToPreview(object)
+            if clone then
+                clone.Parent = ViewmodelFolder
+            end
+        end
+
+        table.insert(DescendantConnections, model.DescendantAdded:Connect(function(object)
+            local clone = AddObjectToPreview(object)
+            if clone then
+                clone.Parent = ViewmodelFolder
+            end
+        end))
+
+        table.insert(DescendantConnections, model.DescendantRemoving:Connect(function(object)
+            RemoveObjectFromPreview(object)
+        end))
+    end
+
     task.spawn(function()
-        loadCharacterPreview()
+        local char = LocalPlayer and (LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait())
+        BuildPreviewFromModel(char)
     end)
 
     if LocalPlayer then
         LocalPlayer.CharacterAdded:Connect(function(newChar)
-            task.wait(1)
-            loadCharacterPreview()
+            task.wait(0.5)
+            BuildPreviewFromModel(newChar)
         end)
     end
 
-    local rotAngle = 0
-    RunService.RenderStepped:Connect(function(dt)
-        if VFrame and VFrame.Parent and VFrame.Visible and charModel and charModel.Parent then
-            rotAngle = (rotAngle + dt * 40) % 360
-            local rootSpinCF = CFrame.new(0, 0, 0) * CFrame.Angles(0, math.rad(rotAngle), 0)
-            for part, relCF in pairs(partCFrames) do
-                if part and part.Parent then
-                    part.CFrame = rootSpinCF * relCF
-                end
+    RunService.Heartbeat:Connect(function()
+        if not CurrentPreviewModel or not VFrame.Visible then return end
+        local root = CurrentPreviewModel:FindFirstChild("HumanoidRootPart") or CurrentPreviewModel:FindFirstChild("Torso") or CurrentPreviewModel.PrimaryPart
+        if not root then return end
+
+        ViewportCamera.CFrame = CFrame.new(root.CFrame:ToWorldSpace(OFFSET).Position, root.Position)
+
+        for original, clone in pairs(RenderObjects) do
+            if original and original.Parent then
+                clone.CFrame = original.CFrame
+            else
+                RemoveObjectFromPreview(original)
             end
         end
     end)
@@ -1140,20 +1164,25 @@ function KraviX:CreateWindow(config)
         if cfg.Names ~= nil and NameLbl then NameLbl.Visible = cfg.Names end
         if cfg.NameColor ~= nil and NameLbl then NameLbl.TextColor3 = cfg.NameColor end
 
+        if cfg.Distance ~= nil and DistLbl then DistLbl.Visible = cfg.Distance end
+        if cfg.DistColor ~= nil and DistLbl then DistLbl.TextColor3 = cfg.DistColor end
+
         if cfg.Tracers ~= nil and TracerLine then TracerLine.Visible = cfg.Tracers end
         if cfg.TracerColor ~= nil and TracerLine then TracerLine.BackgroundColor3 = cfg.TracerColor end
 
-        if cfg.Chams ~= nil then
-            chamsActive = (cfg.Chams == true)
-            local chamColor = cfg.ChamsColor or C.Accent
-            for part, _ in pairs(partCFrames) do
-                if part and part.Parent then
-                    if chamsActive then
-                        part.Color = chamColor
-                        part.Material = Enum.Material.Neon
+        if cfg.Chams ~= nil or cfg.ChamsColor ~= nil then
+            if cfg.Chams ~= nil then ChamsActive = (cfg.Chams == true) end
+            if cfg.ChamsColor ~= nil then ChamColor = cfg.ChamsColor end
+            for original, clone in pairs(RenderObjects) do
+                if clone and clone.Parent then
+                    if ChamsActive then
+                        clone.Color = ChamColor
+                        clone.Material = Enum.Material.Neon
                     else
-                        if origColors[part] then part.Color = origColors[part] end
-                        if origMaterials[part] then part.Material = origMaterials[part] end
+                        if original:IsA("BasePart") then
+                            clone.Color = original.Color
+                            clone.Material = original.Material
+                        end
                     end
                 end
             end
@@ -1218,58 +1247,102 @@ function KraviX:CreateWindow(config)
 
     BtnESP.Button.MouseButton1Click:Connect(function() MiniESP:Toggle() end)
 
-    -- ===== BOTÃO 5: PLAYER LIST & PRIORITY =====
-    local MiniPlayerlist = Window:CreateMiniUI({
-        Title = "Player List & Priority", Width = 290, Height = 230,
-        OnToggle = function(on) BtnGroup.SetActive(on) end
-    })
-    MiniPlayerlist:AddLabel("Jogadores no Servidor (" .. tostring(#game:GetService("Players"):GetPlayers()) .. ")", C.Sub)
+    -- ===== INTEGRATED SPOTIFY PLAYER WIDGET =====
+    function Window:SpotifyPlayer()
+        local Spotify = {}
+        local Request = request or http_request or (syn and syn.request) or (getgenv and getgenv().http and getgenv().http.request)
+        local GetCustomAsset = getcustomasset or getsynasset
 
-    local PlrScroll = Instance.new("ScrollingFrame", MiniPlayerlist.Body)
-    PlrScroll.Size = UDim2.new(1, 0, 0, 110)
-    PlrScroll.BackgroundTransparency = 1
-    PlrScroll.BorderSizePixel = 0
-    PlrScroll.ScrollBarThickness = 2
-    PlrScroll.ScrollBarImageColor3 = C.Muted
-    local PlrList = Instance.new("UIListLayout", PlrScroll)
-    PlrList.Padding = UDim.new(0, 3)
+        local AppFolder = isfolder and isfolder("Axion") and "Axion" or "."
+        local SpotifyFolder = AppFolder .. "/Spotify"
+        local CacheFolder = SpotifyFolder .. "/Cache"
+        local TokenPath = AppFolder .. "/token.txt"
+        local PlaceholderImage = "rbxasset://textures/ui/GuiImagePlaceholder.png"
+        local PollInterval = 1
 
-    local function refreshPlrList()
-        for _, c in ipairs(PlrScroll:GetChildren()) do
-            if c:IsA("Frame") then c:Destroy() end
+        pcall(function()
+            if isfolder and not isfolder(SpotifyFolder) then makefolder(SpotifyFolder) end
+            if isfolder and not isfolder(CacheFolder) then makefolder(CacheFolder) end
+        end)
+
+        local function ReadToken()
+            if not isfile or not isfile(TokenPath) then
+                if writefile then writefile(TokenPath, "") end
+                return ""
+            end
+            return (readfile(TokenPath):gsub("^%s*(.-)%s*$", "%1"))
         end
-        for _, plr in ipairs(game:GetService("Players"):GetPlayers()) do
-            local Row = Instance.new("Frame", PlrScroll)
-            Row.Size = UDim2.new(1, -4, 0, 22)
-            Row.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
-            Row.BorderSizePixel = 0
-            mkCorner(Row, 4)
 
-            local PName = Instance.new("TextLabel", Row)
-            PName.Size = UDim2.new(0.6, 0, 1, 0)
-            PName.Position = UDim2.new(0, 6, 0, 0)
-            PName.BackgroundTransparency = 1
-            PName.Text = plr.DisplayName .. " (@" .. plr.Name .. ")"
-            PName.TextColor3 = C.Text
-            PName.TextSize = 10
-            PName.Font = Enum.Font.Gotham
-            PName.TextXAlignment = Enum.TextXAlignment.Left
-
-            local PBadge = Instance.new("TextLabel", Row)
-            PBadge.Size = UDim2.new(0.35, 0, 1, 0)
-            PBadge.Position = UDim2.new(0.63, 0, 0, 0)
-            PBadge.BackgroundTransparency = 1
-            PBadge.Text = plr == LocalPlayer and "[You]" or "[Neutral]"
-            PBadge.TextColor3 = plr == LocalPlayer and C.Accent or C.Sub
-            PBadge.TextSize = 9
-            PBadge.Font = Enum.Font.Code
-            PBadge.TextXAlignment = Enum.TextXAlignment.Right
+        local function DecodeTokenConfig(RawToken)
+            local CleanToken = (RawToken or ""):gsub("^%s*(.-)%s*$", "%1")
+            if CleanToken == "" then
+                return { Raw = "", AccessToken = "", RefreshToken = "", ClientId = "", ClientSecret = "", ExpiresAt = 0 }
+            end
+            if CleanToken:sub(1, 1) ~= "{" then
+                return { Raw = CleanToken, AccessToken = CleanToken, RefreshToken = "", ClientId = "", ClientSecret = "", ExpiresAt = math.huge }
+            end
+            local ok, Parsed = pcall(game:GetService("HttpService").JSONDecode, game:GetService("HttpService"), CleanToken)
+            if not ok or type(Parsed) ~= "table" then
+                return { Raw = CleanToken, AccessToken = "", RefreshToken = "", ClientId = "", ClientSecret = "", ExpiresAt = 0 }
+            end
+            return {
+                Raw          = CleanToken,
+                AccessToken  = tostring(Parsed.access_token or Parsed.token or ""):gsub("^%s*(.-)%s*$", "%1"),
+                RefreshToken = tostring(Parsed.refresh_token or ""):gsub("^%s*(.-)%s*$", "%1"),
+                ClientId     = tostring(Parsed.client_id or ""):gsub("^%s*(.-)%s*$", "%1"),
+                ClientSecret = tostring(Parsed.client_secret or ""):gsub("^%s*(.-)%s*$", "%1"),
+                ExpiresAt    = tonumber(Parsed.expires_at) or 0
+            }
         end
+
+        local TokenConfig = DecodeTokenConfig(ReadToken())
+        local Token = TokenConfig.AccessToken
+
+        local MiniSpotify = Window:CreateMiniUI({
+            Title = "SPOTIFY PLAYER", Width = 280, Height = 140
+        })
+
+        local SBody = MiniSpotify.Body
+
+        local TrackTitle = Instance.new("TextLabel", SBody)
+        TrackTitle.Size = UDim2.new(1, 0, 0, 18)
+        TrackTitle.BackgroundTransparency = 1
+        TrackTitle.Text = "Spotify Player"
+        TrackTitle.TextColor3 = C.White
+        TrackTitle.TextSize = 12
+        TrackTitle.Font = Enum.Font.GothamBold
+        TrackTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+        local TrackArtist = Instance.new("TextLabel", SBody)
+        TrackArtist.Size = UDim2.new(1, 0, 0, 16)
+        TrackArtist.BackgroundTransparency = 1
+        TrackArtist.Text = "Nenhuma música tocando..."
+        TrackArtist.TextColor3 = C.Sub
+        TrackArtist.TextSize = 10
+        TrackArtist.Font = Enum.Font.Gotham
+        TrackArtist.TextXAlignment = Enum.TextXAlignment.Left
+
+        local TokenBox = MiniSpotify:AddTextbox("Cole seu Spotify Token...", Token, function(val)
+            if writefile then writefile(TokenPath, val) end
+            TokenConfig = DecodeTokenConfig(val)
+            Token = TokenConfig.AccessToken
+            CreateNotification("Spotify", "Token atualizado!", 3, "success")
+        end)
+
+        function Spotify:SetVisibility(visible)
+            if visible then MiniSpotify:Open() else MiniSpotify:Close() end
+        end
+
+        function Spotify:Toggle()
+            MiniSpotify:Toggle()
+        end
+
+        return Spotify
     end
 
-    refreshPlrList()
-    MiniPlayerlist:AddButton("Atualizar Lista (Refresh)", refreshPlrList)
-    BtnGroup.Button.MouseButton1Click:Connect(function() MiniPlayerlist:Toggle() end)
+    Window.SpotifyPlayerInstance = Window:SpotifyPlayer()
+
+
 
     HideWindow = function()
         if not Main.Visible then return end
