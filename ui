@@ -1,4 +1,4 @@
--- 4.1
+-- 4
 local KraviX = {}
 
 local TweenService     = game:GetService("TweenService")
@@ -1032,6 +1032,15 @@ function KraviX:CreateWindow(config)
     local espBoxStroke = mkStroke(EspBox, C.Accent, 1, 0)
     espBoxStroke:SetAttribute("RelZIndex", 5)
 
+    local EspBoxFill = Instance.new("Frame", EspBox)
+    EspBoxFill.Size = UDim2.new(1, 0, 1, 0)
+    EspBoxFill.BackgroundColor3 = C.Accent
+    EspBoxFill.BackgroundTransparency = 0.7
+    EspBoxFill.BorderSizePixel = 0
+    EspBoxFill.ZIndex = MiniESP.Frame.ZIndex + 3
+    EspBoxFill:SetAttribute("RelZIndex", 3)
+    EspBoxFill.Visible = false
+
     local HealthLine = Instance.new("Frame", EspBox)
     HealthLine.Size = UDim2.new(0, 4, 1, 0)
     HealthLine.Position = UDim2.new(0, -8, 0, 0)
@@ -1064,6 +1073,41 @@ function KraviX:CreateWindow(config)
     DistLbl.TextXAlignment = Enum.TextXAlignment.Center
     DistLbl.ZIndex = MiniESP.Frame.ZIndex + 5
     DistLbl:SetAttribute("RelZIndex", 5)
+
+    local WeaponLbl = Instance.new("TextLabel", EspBox)
+    WeaponLbl.Size = UDim2.new(1, 60, 0, 16)
+    WeaponLbl.Position = UDim2.new(0.5, -30, 1, 18)
+    WeaponLbl.BackgroundTransparency = 1
+    WeaponLbl.Text = "[Double-Barrel SG]"
+    WeaponLbl.TextColor3 = C.White
+    WeaponLbl.TextSize = 10
+    WeaponLbl.Font = Enum.Font.Code
+    WeaponLbl.TextXAlignment = Enum.TextXAlignment.Center
+    WeaponLbl.ZIndex = MiniESP.Frame.ZIndex + 5
+    WeaponLbl:SetAttribute("RelZIndex", 5)
+    WeaponLbl.Visible = false
+
+    local HeadDotDot = Instance.new("Frame", Overlay)
+    HeadDotDot.AnchorPoint = Vector2.new(0.5, 0.5)
+    HeadDotDot.Size = UDim2.new(0, 10, 0, 10)
+    HeadDotDot.BackgroundColor3 = C.Accent
+    HeadDotDot.BorderSizePixel = 0
+    HeadDotDot.ZIndex = MiniESP.Frame.ZIndex + 6
+    HeadDotDot:SetAttribute("RelZIndex", 6)
+    HeadDotDot.Visible = false
+    mkCorner(HeadDotDot, 5)
+
+    local HeadDotStroke = mkStroke(HeadDotDot, Color3.fromRGB(0, 0, 0), 1.5, 0)
+    HeadDotStroke:SetAttribute("RelZIndex", 6)
+
+    local PreviewHighlight = Instance.new("Highlight")
+    PreviewHighlight.FillColor = C.Accent
+    PreviewHighlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+    PreviewHighlight.FillTransparency = 0.5
+    PreviewHighlight.OutlineTransparency = 0
+    PreviewHighlight.Enabled = false
+    PreviewHighlight.Adornee = ViewmodelFolder
+    PreviewHighlight.Parent = ViewmodelFolder
 
     local TracerLine = Instance.new("Frame", Overlay)
     TracerLine.Size = UDim2.new(0, 1, 0, 45)
@@ -1117,8 +1161,11 @@ function KraviX:CreateWindow(config)
     local OFFSET = CFrame.new(0, 2.3, -8.0)
     local ChamsActive = false
     local ChamColor = C.Accent
+    local ChamTrans = 0.5
     local SkeletonActive = false
     local SkeletonColor = C.Accent
+    local HeadDotActive = false
+    local HeadDotColor = C.Accent
 
     local ValidClasses = {
         MeshPart = true,
@@ -1137,6 +1184,7 @@ function KraviX:CreateWindow(config)
         end
         table.clear(DescendantConnections)
         ViewmodelFolder:ClearAllChildren()
+        PreviewHighlight.Parent = ViewmodelFolder
     end
 
     local function RemoveObjectFromPreview(obj)
@@ -1167,6 +1215,7 @@ function KraviX:CreateWindow(config)
             if ChamsActive then
                 clone.Color = ChamColor
                 clone.Material = Enum.Material.Neon
+                clone.Transparency = ChamTrans
             end
         elseif obj:IsA("Accoutrement") then
             if obj:FindFirstChild("Handle") and clone:FindFirstChild("Handle") then
@@ -1176,6 +1225,7 @@ function KraviX:CreateWindow(config)
                 if ChamsActive then
                     clone.Handle.Color = ChamColor
                     clone.Handle.Material = Enum.Material.Neon
+                    clone.Handle.Transparency = ChamTrans
                 end
             end
         elseif obj:IsA("Humanoid") then
@@ -1236,6 +1286,25 @@ function KraviX:CreateWindow(config)
             end
         end
 
+        if HeadDotActive and CurrentPreviewModel then
+            local head = CurrentPreviewModel:FindFirstChild("Head")
+            local cloneHead = head and RenderObjects[head]
+            if cloneHead then
+                local pos, vis = ViewportCamera:WorldToViewportPoint(cloneHead.Position)
+                if vis then
+                    HeadDotDot.Position = UDim2.new(0, pos.X, 0, pos.Y)
+                    HeadDotDot.BackgroundColor3 = HeadDotColor
+                    HeadDotDot.Visible = true
+                else
+                    HeadDotDot.Visible = false
+                end
+            else
+                HeadDotDot.Visible = false
+            end
+        else
+            HeadDotDot.Visible = false
+        end
+
         if SkeletonActive and CurrentPreviewModel then
             local isR15 = CurrentPreviewModel:FindFirstChild("UpperTorso") ~= nil
             local connections = isR15 and SkeletonConnectionsR15 or SkeletonConnectionsR6
@@ -1277,19 +1346,34 @@ function KraviX:CreateWindow(config)
     end)
 
     Window.ESPPreviewState = {
-        Box           = true,
-        BoxColor      = C.Accent,
-        Health        = true,
-        Name          = true,
-        NameColor     = C.White,
-        Distance      = true,
-        DistColor     = C.Sub,
-        Tracers       = false,
-        TracerColor   = C.Accent,
-        Skeleton      = false,
-        SkeletonColor = C.Accent,
-        Chams         = false,
-        ChamsColor    = C.Accent,
+        Box               = true,
+        BoxColor          = C.Accent,
+        BoxFill           = false,
+        BoxFillColor      = C.Accent,
+        BoxFillTrans      = 0.7,
+        Health            = true,
+        HealthBar         = true,
+        Name              = true,
+        NameColor         = C.White,
+        Distance          = true,
+        DistColor         = C.Sub,
+        Weapon            = false,
+        WeaponESP         = false,
+        WeaponColor       = C.White,
+        HeadDot           = false,
+        HeadDotColor      = C.Accent,
+        Highlight         = false,
+        HLFillColor       = C.Accent,
+        HLOutlineColor    = Color3.fromRGB(255, 255, 255),
+        HLFillTrans       = 0.5,
+        HLOutTrans        = 0,
+        Tracers           = false,
+        TracerColor       = C.Accent,
+        Skeleton          = false,
+        SkeletonColor     = C.Accent,
+        Chams             = false,
+        ChamsColor        = C.Accent,
+        ChamsTrans        = 0.5,
     }
 
     local function applyESPPreviewUpdate(cfg)
@@ -1297,20 +1381,47 @@ function KraviX:CreateWindow(config)
         for k, v in pairs(cfg) do
             Window.ESPPreviewState[k] = v
         end
+
         if cfg.Box ~= nil then EspBox.Visible = cfg.Box end
         if cfg.Boxes ~= nil then EspBox.Visible = cfg.Boxes end
         if cfg.BoxColor ~= nil and espBoxStroke then espBoxStroke.Color = cfg.BoxColor end
-        
+
+        if cfg.BoxFill ~= nil then EspBoxFill.Visible = cfg.BoxFill end
+        if cfg.BoxFillColor ~= nil then EspBoxFill.BackgroundColor3 = cfg.BoxFillColor end
+        if cfg.BoxFillTrans ~= nil then EspBoxFill.BackgroundTransparency = cfg.BoxFillTrans end
+
         if cfg.Health ~= nil then HealthLine.Visible = cfg.Health end
         if cfg.Healthbar ~= nil then HealthLine.Visible = cfg.Healthbar end
         if cfg.HealthBar ~= nil then HealthLine.Visible = cfg.HealthBar end
-        
+        if cfg.HealthColor ~= nil then HealthLine.BackgroundColor3 = cfg.HealthColor end
+
         if cfg.Name ~= nil and NameLbl then NameLbl.Visible = cfg.Name end
         if cfg.Names ~= nil and NameLbl then NameLbl.Visible = cfg.Names end
         if cfg.NameColor ~= nil and NameLbl then NameLbl.TextColor3 = cfg.NameColor end
 
         if cfg.Distance ~= nil and DistLbl then DistLbl.Visible = cfg.Distance end
         if cfg.DistColor ~= nil and DistLbl then DistLbl.TextColor3 = cfg.DistColor end
+
+        if cfg.Weapon ~= nil or cfg.WeaponESP ~= nil or cfg.WeaponColor ~= nil or cfg.WeaponText ~= nil then
+            if cfg.Weapon ~= nil then WeaponLbl.Visible = cfg.Weapon end
+            if cfg.WeaponESP ~= nil then WeaponLbl.Visible = cfg.WeaponESP end
+            if cfg.WeaponColor ~= nil then WeaponLbl.TextColor3 = cfg.WeaponColor end
+            if cfg.WeaponText ~= nil then WeaponLbl.Text = cfg.WeaponText end
+        end
+
+        if cfg.HeadDot ~= nil or cfg.HeadDotColor ~= nil then
+            if cfg.HeadDot ~= nil then HeadDotActive = (cfg.HeadDot == true) end
+            if cfg.HeadDotColor ~= nil then HeadDotColor = cfg.HeadDotColor end
+            if not HeadDotActive then HeadDotDot.Visible = false end
+        end
+
+        if cfg.Highlight ~= nil or cfg.HLFillColor ~= nil or cfg.HLOutlineColor ~= nil or cfg.HLFillTrans ~= nil or cfg.HLOutTrans ~= nil then
+            if cfg.Highlight ~= nil then PreviewHighlight.Enabled = (cfg.Highlight == true) end
+            if cfg.HLFillColor ~= nil then PreviewHighlight.FillColor = cfg.HLFillColor end
+            if cfg.HLOutlineColor ~= nil then PreviewHighlight.OutlineColor = cfg.HLOutlineColor end
+            if cfg.HLFillTrans ~= nil then PreviewHighlight.FillTransparency = cfg.HLFillTrans end
+            if cfg.HLOutTrans ~= nil then PreviewHighlight.OutlineTransparency = cfg.HLOutTrans end
+        end
 
         if cfg.Tracers ~= nil and TracerLine then TracerLine.Visible = cfg.Tracers end
         if cfg.TracerColor ~= nil and TracerLine then TracerLine.BackgroundColor3 = cfg.TracerColor end
@@ -1322,18 +1433,21 @@ function KraviX:CreateWindow(config)
             if cfg.SkeletonColor ~= nil then SkeletonColor = cfg.SkeletonColor end
         end
 
-        if cfg.Chams ~= nil or cfg.ChamsColor ~= nil then
+        if cfg.Chams ~= nil or cfg.ChamsColor ~= nil or cfg.ChamsTrans ~= nil then
             if cfg.Chams ~= nil then ChamsActive = (cfg.Chams == true) end
             if cfg.ChamsColor ~= nil then ChamColor = cfg.ChamsColor end
+            if cfg.ChamsTrans ~= nil then ChamTrans = cfg.ChamsTrans end
             for original, clone in pairs(RenderObjects) do
                 if clone and clone.Parent then
                     if ChamsActive then
                         clone.Color = ChamColor
                         clone.Material = Enum.Material.Neon
+                        if clone:IsA("BasePart") then clone.Transparency = ChamTrans or 0.3 end
                     else
                         if original:IsA("BasePart") then
                             clone.Color = original.Color
                             clone.Material = original.Material
+                            clone.Transparency = original.Transparency
                         end
                     end
                 end
@@ -1376,25 +1490,37 @@ function KraviX:CreateWindow(config)
         Model               = ViewmodelFolder,
         Overlay             = Overlay,
         EspBox              = EspBox,
+        EspBoxFill          = EspBoxFill,
         HealthLine          = HealthLine,
         NameLabel           = NameLbl,
         DistanceLabel       = DistLbl,
+        WeaponLabel         = WeaponLbl,
+        HeadDotDot          = HeadDotDot,
+        Highlight           = PreviewHighlight,
         TracerLine          = TracerLine,
         SkeletonContainer   = SkeletonContainer,
 
         Update              = function(_, cfg) Window:UpdateESPPreview(cfg) end,
         SetBox              = function(_, v, col) Window:UpdateESPPreview({Box = v, BoxColor = col}) end,
+        SetBoxFill          = function(_, v, col, trans) Window:UpdateESPPreview({BoxFill = v, BoxFillColor = col, BoxFillTrans = trans}) end,
         SetHealth           = function(_, v) Window:UpdateESPPreview({Health = v}) end,
         SetName             = function(_, v, col) Window:UpdateESPPreview({Name = v, NameColor = col}) end,
+        SetWeapon           = function(_, v, col, txt) Window:UpdateESPPreview({WeaponESP = v, WeaponColor = col, WeaponText = txt}) end,
+        SetHeadDot          = function(_, v, col) Window:UpdateESPPreview({HeadDot = v, HeadDotColor = col}) end,
+        SetHighlight        = function(_, v, fc, oc, ft, ot) Window:UpdateESPPreview({Highlight = v, HLFillColor = fc, HLOutlineColor = oc, HLFillTrans = ft, HLOutTrans = ot}) end,
         SetTracers          = function(_, v, col) Window:UpdateESPPreview({Tracers = v, TracerColor = col}) end,
         SetSkeleton         = function(_, v, col) Window:UpdateESPPreview({Skeleton = v, SkeletonColor = col}) end,
-        SetChams            = function(_, v, col) Window:UpdateESPPreview({Chams = v, ChamsColor = col}) end,
+        SetChams            = function(_, v, col, trans) Window:UpdateESPPreview({Chams = v, ChamsColor = col, ChamsTrans = trans}) end,
         Bind                = function(_, tbl) Window:BindESPPreview(tbl) end,
         SetBuiltInVisible   = function(_, v)
             EspBox.Visible = v
+            EspBoxFill.Visible = v
             HealthLine.Visible = v
             NameLbl.Visible = v
             DistLbl.Visible = v
+            WeaponLbl.Visible = v
+            HeadDotDot.Visible = v
+            PreviewHighlight.Enabled = v
             TracerLine.Visible = v
             SkeletonContainer.Visible = v
         end,
@@ -2412,5 +2538,8 @@ function KraviX:CreateWindow(config)
 
     return Window
 end
+
+if getgenv then getgenv().KraviX = KraviX end
+_G.KraviX = KraviX
 
 return KraviX
