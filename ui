@@ -1,4 +1,4 @@
--- 4.1
+-- 4
 local KraviX = {}
 
 local TweenService     = game:GetService("TweenService")
@@ -968,51 +968,30 @@ function KraviX:CreateWindow(config)
         end
     end
 
-    -- Top Header Control Bar (Search Box + Reset View Button)
+    -- Top Header Control Bar (Reset View Button)
     local TopHeader = Instance.new("Frame", MiniPlayers.Body)
     TopHeader.Size = UDim2.new(1, 0, 0, 28)
     TopHeader.BackgroundTransparency = 1
     TopHeader.ZIndex = MiniPlayers.Frame.ZIndex + 2
     TopHeader:SetAttribute("RelZIndex", 2)
 
-    local SearchBox = Instance.new("TextBox", TopHeader)
-    SearchBox.Size = UDim2.new(1, -95, 1, 0)
-    SearchBox.Position = UDim2.new(0, 0, 0, 0)
-    SearchBox.BackgroundColor3 = Color3.fromRGB(16, 16, 22)
-    SearchBox.PlaceholderText = "🔍 Search player..."
-    SearchBox.PlaceholderColor3 = C.Muted
-    SearchBox.Text = ""
-    SearchBox.TextColor3 = C.White
-    SearchBox.TextSize = 11
-    SearchBox.Font = Enum.Font.Gotham
-    SearchBox.ClearTextOnFocus = false
-    SearchBox.ZIndex = MiniPlayers.Frame.ZIndex + 2
-    SearchBox:SetAttribute("RelZIndex", 2)
-    mkCorner(SearchBox, 6)
-    local sbStroke = mkStroke(SearchBox, C.BorderBt, 1, 0)
-    sbStroke:SetAttribute("RelZIndex", 2)
-    mkPad(SearchBox, 0, 0, 8, 8)
-
-    SearchBox.Focused:Connect(function() Tween(sbStroke, {Color = C.Accent}, 0.12):Play() end)
-    SearchBox.FocusLost:Connect(function() Tween(sbStroke, {Color = C.BorderBt}, 0.12):Play() end)
-
     local ResetCamBtn = Instance.new("TextButton", TopHeader)
-    ResetCamBtn.Size = UDim2.new(0, 88, 1, 0)
-    ResetCamBtn.Position = UDim2.new(1, -88, 0, 0)
-    ResetCamBtn.BackgroundColor3 = Color3.fromRGB(22, 22, 30)
-    ResetCamBtn.Text = "📷 Reset View"
-    ResetCamBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
-    ResetCamBtn.TextSize = 10
+    ResetCamBtn.Size = UDim2.new(1, 0, 1, 0)
+    ResetCamBtn.Position = UDim2.new(0, 0, 0, 0)
+    ResetCamBtn.BackgroundColor3 = Color3.fromRGB(18, 12, 28)
+    ResetCamBtn.Text = "📷 Reset Camera View"
+    ResetCamBtn.TextColor3 = Color3.fromRGB(220, 220, 230)
+    ResetCamBtn.TextSize = 11
     ResetCamBtn.Font = Enum.Font.GothamBold
     ResetCamBtn.AutoButtonColor = false
     ResetCamBtn.ZIndex = MiniPlayers.Frame.ZIndex + 2
     ResetCamBtn:SetAttribute("RelZIndex", 2)
     mkCorner(ResetCamBtn, 6)
-    local rstStroke = mkStroke(ResetCamBtn, Color3.fromRGB(45, 45, 58), 1, 0)
+    local rstStroke = mkStroke(ResetCamBtn, Color3.fromRGB(48, 28, 70), 1, 0)
     rstStroke:SetAttribute("RelZIndex", 2)
 
     ResetCamBtn.MouseEnter:Connect(function() Tween(ResetCamBtn, {BackgroundColor3 = C.Accent, TextColor3 = C.White}, 0.1):Play() end)
-    ResetCamBtn.MouseLeave:Connect(function() Tween(ResetCamBtn, {BackgroundColor3 = Color3.fromRGB(22, 22, 30), TextColor3 = Color3.fromRGB(200, 200, 200)}, 0.1):Play() end)
+    ResetCamBtn.MouseLeave:Connect(function() Tween(ResetCamBtn, {BackgroundColor3 = Color3.fromRGB(18, 12, 28), TextColor3 = Color3.fromRGB(220, 220, 230)}, 0.1):Play() end)
 
     ResetCamBtn.MouseButton1Click:Connect(function()
         _G.KraviX_ViewingPlayer = nil
@@ -1069,7 +1048,6 @@ function KraviX:CreateWindow(config)
             if child:IsA("Frame") then child:Destroy() end
         end
 
-        local filter = SearchBox.Text:lower()
         local allPlayers = Players:GetPlayers()
         local totalCount = 0
         local wlCount = 0
@@ -1083,28 +1061,27 @@ function KraviX:CreateWindow(config)
             if plr ~= LocalPlayer then
                 local dName = plr.DisplayName or plr.Name
                 local uName = plr.Name
-                if filter == "" or dName:lower():find(filter, 1, true) or uName:lower():find(filter, 1, true) then
-                    totalCount = totalCount + 1
-                    local isWL = (_G.KraviX_GlobalWhitelist[plr.UserId] == true) or (_G.KraviX_GlobalWhitelist[plr.Name] == true)
-                    local isView = (_G.KraviX_ViewingPlayer == plr)
+                totalCount = totalCount + 1
+                local isWL = (_G.KraviX_GlobalWhitelist[plr.UserId] == true) or (_G.KraviX_GlobalWhitelist[plr.Name] == true)
+                local isView = (_G.KraviX_ViewingPlayer == plr)
 
-                    local Card = Instance.new("Frame", PlayerScroll)
-                    Card.Size = UDim2.new(1, -4, 0, 44)
-                    Card.BackgroundColor3 = isWL and Color3.fromRGB(32, 16, 50) or Color3.fromRGB(12, 10, 18)
-                    Card.BorderSizePixel = 0
-                    Card.ZIndex = MiniPlayers.Frame.ZIndex + 2
-                    Card:SetAttribute("RelZIndex", 2)
-                    mkCorner(Card, 6)
-                    local cardStroke = mkStroke(Card, isWL and C.Accent or Color3.fromRGB(38, 22, 58), 1, 0)
-                    cardStroke:SetAttribute("RelZIndex", 2)
+                local Card = Instance.new("Frame", PlayerScroll)
+                Card.Size = UDim2.new(1, -4, 0, 44)
+                Card.BackgroundColor3 = isWL and Color3.fromRGB(34, 14, 52) or Color3.fromRGB(0, 0, 0)
+                Card.BorderSizePixel = 0
+                Card.ZIndex = MiniPlayers.Frame.ZIndex + 2
+                Card:SetAttribute("RelZIndex", 2)
+                mkCorner(Card, 6)
+                local cardStroke = mkStroke(Card, isWL and C.Accent or Color3.fromRGB(30, 30, 30), 1, 0)
+                cardStroke:SetAttribute("RelZIndex", 2)
 
-                    -- Hover animation on Card
-                    Card.MouseEnter:Connect(function()
-                        Tween(Card, {BackgroundColor3 = isWL and Color3.fromRGB(42, 22, 64) or Color3.fromRGB(18, 14, 26)}, 0.12):Play()
-                    end)
-                    Card.MouseLeave:Connect(function()
-                        Tween(Card, {BackgroundColor3 = isWL and Color3.fromRGB(32, 16, 50) or Color3.fromRGB(12, 10, 18)}, 0.12):Play()
-                    end)
+                -- Hover animation on Card
+                Card.MouseEnter:Connect(function()
+                    Tween(Card, {BackgroundColor3 = isWL and Color3.fromRGB(44, 20, 66) or Color3.fromRGB(12, 12, 12)}, 0.12):Play()
+                end)
+                Card.MouseLeave:Connect(function()
+                    Tween(Card, {BackgroundColor3 = isWL and Color3.fromRGB(34, 14, 52) or Color3.fromRGB(0, 0, 0)}, 0.12):Play()
+                end)
 
                     -- Avatar Headshot Thumbnail
                     local AvatarImg = Instance.new("ImageLabel", Card)
@@ -1224,7 +1201,6 @@ function KraviX:CreateWindow(config)
         updateCanvas()
     end
 
-    SearchBox:GetPropertyChangedSignal("Text"):Connect(refreshPlayerList)
     Players.PlayerAdded:Connect(function() task.delay(0.2, refreshPlayerList) end)
     Players.PlayerRemoving:Connect(function(p)
         if _G.KraviX_ViewingPlayer == p then
