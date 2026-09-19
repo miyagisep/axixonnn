@@ -1,4 +1,4 @@
--- 4.1
+-- 4
 local KraviX = {}
 
 local TweenService     = game:GetService("TweenService")
@@ -1074,12 +1074,51 @@ function KraviX:CreateWindow(config)
     TracerLine:SetAttribute("RelZIndex", 5)
     TracerLine.Visible = false
 
+    local SkeletonContainer = Instance.new("Frame", Overlay)
+    SkeletonContainer.Size = UDim2.new(1, 0, 1, 0)
+    SkeletonContainer.BackgroundTransparency = 1
+    SkeletonContainer.ZIndex = MiniESP.Frame.ZIndex + 4
+    SkeletonContainer:SetAttribute("RelZIndex", 4)
+
+    local SkeletonLinesPool = {}
+    local function GetSkeletonLine(i)
+        if not SkeletonLinesPool[i] then
+            local line = Instance.new("Frame", SkeletonContainer)
+            line.AnchorPoint = Vector2.new(0.5, 0.5)
+            line.BackgroundColor3 = C.Accent
+            line.BorderSizePixel = 0
+            line.ZIndex = MiniESP.Frame.ZIndex + 5
+            line:SetAttribute("RelZIndex", 5)
+            SkeletonLinesPool[i] = line
+        end
+        return SkeletonLinesPool[i]
+    end
+
+    local SkeletonConnectionsR15 = {
+        {"Head", "UpperTorso"},
+        {"UpperTorso", "LowerTorso"},
+        {"UpperTorso", "LeftUpperArm"}, {"LeftUpperArm", "LeftLowerArm"}, {"LeftLowerArm", "LeftHand"},
+        {"UpperTorso", "RightUpperArm"}, {"RightUpperArm", "RightLowerArm"}, {"RightLowerArm", "RightHand"},
+        {"LowerTorso", "LeftUpperLeg"}, {"LeftUpperLeg", "LeftLowerLeg"}, {"LeftLowerLeg", "LeftFoot"},
+        {"LowerTorso", "RightUpperLeg"}, {"RightUpperLeg", "RightLowerLeg"}, {"RightLowerLeg", "RightFoot"}
+    }
+
+    local SkeletonConnectionsR6 = {
+        {"Head", "Torso"},
+        {"Torso", "Left Arm"},
+        {"Torso", "Right Arm"},
+        {"Torso", "Left Leg"},
+        {"Torso", "Right Leg"}
+    }
+
     local RenderObjects = {}
     local DescendantConnections = {}
     local CurrentPreviewModel = nil
     local OFFSET = CFrame.new(0, 2.3, -8.0)
     local ChamsActive = false
     local ChamColor = C.Accent
+    local SkeletonActive = false
+    local SkeletonColor = C.Accent
 
     local ValidClasses = {
         MeshPart = true,
@@ -1196,20 +1235,61 @@ function KraviX:CreateWindow(config)
                 RemoveObjectFromPreview(original)
             end
         end
+
+        if SkeletonActive and CurrentPreviewModel then
+            local isR15 = CurrentPreviewModel:FindFirstChild("UpperTorso") ~= nil
+            local connections = isR15 and SkeletonConnectionsR15 or SkeletonConnectionsR6
+            local lineIndex = 0
+            for _, pair in ipairs(connections) do
+                local p1Name, p2Name = pair[1], pair[2]
+                local orig1 = CurrentPreviewModel:FindFirstChild(p1Name)
+                local orig2 = CurrentPreviewModel:FindFirstChild(p2Name)
+                local clone1 = orig1 and RenderObjects[orig1]
+                local clone2 = orig2 and RenderObjects[orig2]
+                
+                if clone1 and clone2 then
+                    local pos1, vis1 = ViewportCamera:WorldToViewportPoint(clone1.Position)
+                    local pos2, vis2 = ViewportCamera:WorldToViewportPoint(clone2.Position)
+                    if vis1 and vis2 then
+                        lineIndex = lineIndex + 1
+                        local lineFrame = GetSkeletonLine(lineIndex)
+                        local pt1 = Vector2.new(pos1.X, pos1.Y)
+                        local pt2 = Vector2.new(pos2.X, pos2.Y)
+                        local center = (pt1 + pt2) / 2
+                        local dist = (pt2 - pt1).Magnitude
+                        local rot = math.deg(math.atan2(pt2.Y - pt1.Y, pt2.X - pt1.X))
+                        lineFrame.Size = UDim2.new(0, dist, 0, 1.5)
+                        lineFrame.Position = UDim2.new(0, center.X, 0, center.Y)
+                        lineFrame.Rotation = rot
+                        lineFrame.BackgroundColor3 = SkeletonColor
+                        lineFrame.Visible = true
+                    end
+                end
+            end
+            for i = lineIndex + 1, #SkeletonLinesPool do
+                SkeletonLinesPool[i].Visible = false
+            end
+        else
+            for _, lineFrame in ipairs(SkeletonLinesPool) do
+                lineFrame.Visible = false
+            end
+        end
     end)
 
     Window.ESPPreviewState = {
-        Box         = true,
-        BoxColor    = C.Accent,
-        Health      = true,
-        Name        = true,
-        NameColor   = C.White,
-        Distance    = true,
-        DistColor   = C.Sub,
-        Tracers     = false,
-        TracerColor = C.Accent,
-        Chams       = false,
-        ChamsColor  = C.Accent,
+        Box           = true,
+        BoxColor      = C.Accent,
+        Health        = true,
+        Name          = true,
+        NameColor     = C.White,
+        Distance      = true,
+        DistColor     = C.Sub,
+        Tracers       = false,
+        TracerColor   = C.Accent,
+        Skeleton      = false,
+        SkeletonColor = C.Accent,
+        Chams         = false,
+        ChamsColor    = C.Accent,
     }
 
     local function applyESPPreviewUpdate(cfg)
@@ -1234,6 +1314,13 @@ function KraviX:CreateWindow(config)
 
         if cfg.Tracers ~= nil and TracerLine then TracerLine.Visible = cfg.Tracers end
         if cfg.TracerColor ~= nil and TracerLine then TracerLine.BackgroundColor3 = cfg.TracerColor end
+
+        if cfg.Skeleton ~= nil or cfg.Skeletons ~= nil or cfg.SkeletonESP ~= nil or cfg.SkeletonColor ~= nil then
+            if cfg.Skeleton ~= nil then SkeletonActive = (cfg.Skeleton == true) end
+            if cfg.Skeletons ~= nil then SkeletonActive = (cfg.Skeletons == true) end
+            if cfg.SkeletonESP ~= nil then SkeletonActive = (cfg.SkeletonESP == true) end
+            if cfg.SkeletonColor ~= nil then SkeletonColor = cfg.SkeletonColor end
+        end
 
         if cfg.Chams ~= nil or cfg.ChamsColor ~= nil then
             if cfg.Chams ~= nil then ChamsActive = (cfg.Chams == true) end
@@ -1284,13 +1371,43 @@ function KraviX:CreateWindow(config)
     end
 
     Window.ESPPreview = {
-        Update       = function(_, cfg) Window:UpdateESPPreview(cfg) end,
-        SetBox       = function(_, v, col) Window:UpdateESPPreview({Box = v, BoxColor = col}) end,
-        SetHealth    = function(_, v) Window:UpdateESPPreview({Health = v}) end,
-        SetName      = function(_, v, col) Window:UpdateESPPreview({Name = v, NameColor = col}) end,
-        SetTracers   = function(_, v, col) Window:UpdateESPPreview({Tracers = v, TracerColor = col}) end,
-        SetChams     = function(_, v, col) Window:UpdateESPPreview({Chams = v, ChamsColor = col}) end,
-        Bind         = function(_, tbl) Window:BindESPPreview(tbl) end,
+        ViewportFrame       = VFrame,
+        Camera              = ViewportCamera,
+        Model               = ViewmodelFolder,
+        Overlay             = Overlay,
+        EspBox              = EspBox,
+        HealthLine          = HealthLine,
+        NameLabel           = NameLbl,
+        DistanceLabel       = DistLbl,
+        TracerLine          = TracerLine,
+        SkeletonContainer   = SkeletonContainer,
+
+        Update              = function(_, cfg) Window:UpdateESPPreview(cfg) end,
+        SetBox              = function(_, v, col) Window:UpdateESPPreview({Box = v, BoxColor = col}) end,
+        SetHealth           = function(_, v) Window:UpdateESPPreview({Health = v}) end,
+        SetName             = function(_, v, col) Window:UpdateESPPreview({Name = v, NameColor = col}) end,
+        SetTracers          = function(_, v, col) Window:UpdateESPPreview({Tracers = v, TracerColor = col}) end,
+        SetSkeleton         = function(_, v, col) Window:UpdateESPPreview({Skeleton = v, SkeletonColor = col}) end,
+        SetChams            = function(_, v, col) Window:UpdateESPPreview({Chams = v, ChamsColor = col}) end,
+        Bind                = function(_, tbl) Window:BindESPPreview(tbl) end,
+        SetBuiltInVisible   = function(_, v)
+            EspBox.Visible = v
+            HealthLine.Visible = v
+            NameLbl.Visible = v
+            DistLbl.Visible = v
+            TracerLine.Visible = v
+            SkeletonContainer.Visible = v
+        end,
+        WorldToViewport     = function(_, worldPos)
+            local pos, vis = ViewportCamera:WorldToViewportPoint(worldPos)
+            return Vector2.new(pos.X, pos.Y), vis
+        end,
+        AddCustomElement    = function(_, guiObj)
+            if guiObj and guiObj:IsA("GuiObject") then
+                guiObj.Parent = Overlay
+            end
+            return guiObj
+        end
     }
 
     BtnESP.Button.MouseButton1Click:Connect(function() MiniESP:Toggle() end)
