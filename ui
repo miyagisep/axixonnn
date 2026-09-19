@@ -1,4 +1,4 @@
--- 4.1
+-- 4
 local KraviX = {}
 
 local TweenService     = game:GetService("TweenService")
@@ -1051,8 +1051,9 @@ function KraviX:CreateWindow(config)
     mkCorner(HealthLine, 2)
 
     local NameLbl = Instance.new("TextLabel", EspBox)
-    NameLbl.Size = UDim2.new(1, 60, 0, 16)
-    NameLbl.Position = UDim2.new(0.5, -30, 0, -20)
+    NameLbl.AnchorPoint = Vector2.new(0.5, 1)
+    NameLbl.Size = UDim2.new(0, 200, 0, 16)
+    NameLbl.Position = UDim2.new(0.5, 0, 0, -4)
     NameLbl.BackgroundTransparency = 1
     NameLbl.Text = (LocalPlayer and LocalPlayer.DisplayName or "Player")
     NameLbl.TextColor3 = C.White
@@ -1063,8 +1064,9 @@ function KraviX:CreateWindow(config)
     NameLbl:SetAttribute("RelZIndex", 5)
 
     local DistLbl = Instance.new("TextLabel", EspBox)
-    DistLbl.Size = UDim2.new(1, 60, 0, 16)
-    DistLbl.Position = UDim2.new(0.5, -30, 1, 4)
+    DistLbl.AnchorPoint = Vector2.new(0.5, 0)
+    DistLbl.Size = UDim2.new(0, 200, 0, 16)
+    DistLbl.Position = UDim2.new(0.5, 0, 1, 4)
     DistLbl.BackgroundTransparency = 1
     DistLbl.Text = "[35m]"
     DistLbl.TextColor3 = C.Sub
@@ -1075,8 +1077,9 @@ function KraviX:CreateWindow(config)
     DistLbl:SetAttribute("RelZIndex", 5)
 
     local WeaponLbl = Instance.new("TextLabel", EspBox)
-    WeaponLbl.Size = UDim2.new(1, 60, 0, 16)
-    WeaponLbl.Position = UDim2.new(0.5, -30, 1, 18)
+    WeaponLbl.AnchorPoint = Vector2.new(0.5, 0)
+    WeaponLbl.Size = UDim2.new(0, 200, 0, 16)
+    WeaponLbl.Position = UDim2.new(0.5, 0, 1, 18)
     WeaponLbl.BackgroundTransparency = 1
     WeaponLbl.Text = "[Double-Barrel SG]"
     WeaponLbl.TextColor3 = C.White
@@ -1087,18 +1090,27 @@ function KraviX:CreateWindow(config)
     WeaponLbl:SetAttribute("RelZIndex", 5)
     WeaponLbl.Visible = false
 
-    local HeadDotDot = Instance.new("Frame", Overlay)
-    HeadDotDot.AnchorPoint = Vector2.new(0.5, 0.5)
-    HeadDotDot.Size = UDim2.new(0, 10, 0, 10)
-    HeadDotDot.BackgroundColor3 = C.Accent
-    HeadDotDot.BorderSizePixel = 0
-    HeadDotDot.ZIndex = MiniESP.Frame.ZIndex + 6
-    HeadDotDot:SetAttribute("RelZIndex", 6)
-    HeadDotDot.Visible = false
-    mkCorner(HeadDotDot, 5)
+    local HeadDotDotOut = Instance.new("Frame", Overlay)
+    HeadDotDotOut.AnchorPoint = Vector2.new(0.5, 0.5)
+    HeadDotDotOut.Size = UDim2.new(0, 16, 0, 16)
+    HeadDotDotOut.BackgroundTransparency = 1
+    HeadDotDotOut.ZIndex = MiniESP.Frame.ZIndex + 6
+    HeadDotDotOut:SetAttribute("RelZIndex", 6)
+    HeadDotDotOut.Visible = false
+    mkCorner(HeadDotDotOut, 100)
+    local HeadDotOutStroke = mkStroke(HeadDotDotOut, Color3.fromRGB(0, 0, 0), 2.5, 0)
+    HeadDotOutStroke:SetAttribute("RelZIndex", 6)
 
-    local HeadDotStroke = mkStroke(HeadDotDot, Color3.fromRGB(0, 0, 0), 1.5, 0)
-    HeadDotStroke:SetAttribute("RelZIndex", 6)
+    local HeadDotDot = Instance.new("Frame", HeadDotDotOut)
+    HeadDotDot.AnchorPoint = Vector2.new(0.5, 0.5)
+    HeadDotDot.Position = UDim2.new(0.5, 0, 0.5, 0)
+    HeadDotDot.Size = UDim2.new(1, -2, 1, -2)
+    HeadDotDot.BackgroundTransparency = 1
+    HeadDotDot.ZIndex = MiniESP.Frame.ZIndex + 7
+    HeadDotDot:SetAttribute("RelZIndex", 7)
+    mkCorner(HeadDotDot, 100)
+    local HeadDotStroke = mkStroke(HeadDotDot, C.Accent, 1.2, 0)
+    HeadDotStroke:SetAttribute("RelZIndex", 7)
 
     local PreviewHighlight = nil
     local function GetPreviewHighlight()
@@ -1386,17 +1398,23 @@ function KraviX:CreateWindow(config)
             if cloneHead then
                 local pos, vis = ProjectViewportPoint(cloneHead.Position)
                 if vis then
-                    HeadDotDot.Position = UDim2.new(0, pos.X, 0, pos.Y)
-                    HeadDotDot.BackgroundColor3 = HeadDotColor
-                    HeadDotDot.Visible = true
+                    local topWorld = (cloneHead.CFrame * CFrame.new(0, cloneHead.Size.Y/2, 0)).Position
+                    local botWorld = (cloneHead.CFrame * CFrame.new(0, -cloneHead.Size.Y/2, 0)).Position
+                    local pTop = ProjectViewportPoint(topWorld)
+                    local pBot = ProjectViewportPoint(botWorld)
+                    local diameter = math.clamp(math.abs(pBot.Y - pTop.Y), 10, 36)
+                    HeadDotDotOut.Size = UDim2.new(0, diameter, 0, diameter)
+                    HeadDotDotOut.Position = UDim2.new(0, pos.X, 0, pos.Y)
+                    HeadDotStroke.Color = HeadDotColor
+                    HeadDotDotOut.Visible = true
                 else
-                    HeadDotDot.Visible = false
+                    HeadDotDotOut.Visible = false
                 end
             else
-                HeadDotDot.Visible = false
+                HeadDotDotOut.Visible = false
             end
         else
-            HeadDotDot.Visible = false
+            HeadDotDotOut.Visible = false
         end
 
         if SkeletonActive and CurrentPreviewModel then
@@ -1508,7 +1526,7 @@ function KraviX:CreateWindow(config)
         if cfg.HeadDot ~= nil or cfg.HeadDotColor ~= nil then
             if cfg.HeadDot ~= nil then HeadDotActive = (cfg.HeadDot == true) end
             if cfg.HeadDotColor ~= nil then HeadDotColor = cfg.HeadDotColor end
-            if not HeadDotActive then HeadDotDot.Visible = false end
+            if not HeadDotActive then HeadDotDotOut.Visible = false end
         end
 
         if cfg.Highlight ~= nil or cfg.HLFillColor ~= nil or cfg.HLOutlineColor ~= nil or cfg.HLFillTrans ~= nil or cfg.HLOutTrans ~= nil then
@@ -1647,7 +1665,7 @@ function KraviX:CreateWindow(config)
             NameLbl.Visible = v
             DistLbl.Visible = v
             WeaponLbl.Visible = v
-            HeadDotDot.Visible = v
+            HeadDotDotOut.Visible = v
             local hl = GetPreviewHighlight()
             if hl then hl.Enabled = v end
             local sb = GetPreviewSelectionBox()
