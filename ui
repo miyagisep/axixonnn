@@ -1,4 +1,4 @@
--- 4.1
+-- 4
 local KraviX = {}
 
 local TweenService     = game:GetService("TweenService")
@@ -720,11 +720,8 @@ function KraviX:CreateWindow(config)
     end
 
     -- ===== MINI UI REUTILIZÁVEL =====
-    -- Cria uma janelinha pequena, independente da Main, com sua própria
-    -- animação de abrir/fechar (slide + fade, mesmo estilo da UI principal).
-    -- NÃO esconde nem afeta a Main nem o SidePanel.
-    -- Uso: local mini = Window:CreateMiniUI({Title="Updates", Width=260, Height=160})
-    --      mini:AddLabel("texto"); mini:Open() / mini:Close() / mini:Toggle()
+    local CreatedMiniUIs = {}
+
     function Window:CreateMiniUI(cfg)
         cfg = cfg or {}
         local mW = cfg.Width  or 260
@@ -886,6 +883,7 @@ function KraviX:CreateWindow(config)
             return Box
         end
 
+        table.insert(CreatedMiniUIs, MiniHandle)
         return MiniHandle
     end
 
@@ -896,10 +894,17 @@ function KraviX:CreateWindow(config)
 
     -- ===== BOTÃO 2: THEME & STYLE =====
     local MiniStyle = Window:CreateMiniUI({
-        Title = "Theme & Style", Width = 280, Height = 180,
+        Title = "Theme & Style", Width = 280, Height = 210,
         OnToggle = function(on) BtnTheme.SetActive(on) end
     })
     MiniStyle:AddLabel("Ajustes visuais e utilitários", C.Sub)
+    MiniStyle:AddButton("Abrir / Fechar Spotify Player", function()
+        if Window.SpotifyPlayerInstance then
+            Window.SpotifyPlayerInstance:Toggle()
+        else
+            Window:SpotifyPlayer()
+        end
+    end)
     MiniStyle:AddButton("Copiar JobID do Servidor", function()
         setclipboard(game.JobId)
         CreateNotification("KraviX", "JobID copiado com sucesso!", 3, "info")
@@ -929,17 +934,15 @@ function KraviX:CreateWindow(config)
     MiniConfigs:AddButton("Deletar Configuração", function()
         CreateNotification("KraviX", "Config deletada!", 3, "error")
     end)
-    BtnCloud.Button.MouseButton1Click:Connect(function() MiniConfigs:Toggle() end)
-
-    -- ===== BOTÃO 2: REAL 3D VIEWPORT ESP PREVIEW & VISUALS =====
+    BtnCloud.Button.MouseButton1Click:Connect(function() MiniCon    -- ===== BOTÃO 2: REAL 3D VIEWPORT ESP PREVIEW & VISUALS =====
     local MiniESP = Window:CreateMiniUI({
-        Title = "ESP PREVIEW", Width = 260, Height = 360,
+        Title = "ESP PREVIEW", Width = 260, Height = 245,
         OnToggle = function(on) BtnESP.SetActive(on) end
     })
     MiniESP:AddLabel("Preview Real do Seu Personagem em 3D", C.Sub)
 
     local VFrame = Instance.new("ViewportFrame", MiniESP.Body)
-    VFrame.Size = UDim2.new(1, 0, 0, 210)
+    VFrame.Size = UDim2.new(1, 0, 0, 205)
     VFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 14)
     VFrame.BorderSizePixel = 0
     VFrame.ZIndex = 252
@@ -1228,23 +1231,6 @@ function KraviX:CreateWindow(config)
         Bind         = function(_, tbl) Window:BindESPPreview(tbl) end,
     }
 
-    MiniESP:AddToggle("ESP Box Visible", true, function(v)
-        Window:UpdateESPPreview({Box = v})
-        if Window._BoundESPSettings then Window._BoundESPSettings.Box = v; Window._BoundESPSettings.Boxes = v end
-    end)
-    MiniESP:AddToggle("ESP Health Bar", true, function(v)
-        Window:UpdateESPPreview({Health = v})
-        if Window._BoundESPSettings then Window._BoundESPSettings.Health = v; Window._BoundESPSettings.Healthbar = v end
-    end)
-    MiniESP:AddToggle("ESP Tracers", false, function(v)
-        Window:UpdateESPPreview({Tracers = v})
-        if Window._BoundESPSettings then Window._BoundESPSettings.Tracers = v end
-    end)
-    MiniESP:AddToggle("Chams Highlight", false, function(v)
-        Window:UpdateESPPreview({Chams = v})
-        if Window._BoundESPSettings then Window._BoundESPSettings.Chams = v end
-    end)
-
     BtnESP.Button.MouseButton1Click:Connect(function() MiniESP:Toggle() end)
 
     -- ===== INTEGRATED SPOTIFY PLAYER WIDGET =====
@@ -1253,7 +1239,7 @@ function KraviX:CreateWindow(config)
         local Request = request or http_request or (syn and syn.request) or (getgenv and getgenv().http and getgenv().http.request)
         local GetCustomAsset = getcustomasset or getsynasset
 
-        local AppFolder = isfolder and isfolder("Axion") and "Axion" or "."
+        local AppFolder = (isfolder and isfolder("Axion")) and "Axion" or "."
         local SpotifyFolder = AppFolder .. "/Spotify"
         local CacheFolder = SpotifyFolder .. "/Cache"
         local TokenPath = AppFolder .. "/token.txt"
@@ -1270,7 +1256,8 @@ function KraviX:CreateWindow(config)
                 if writefile then writefile(TokenPath, "") end
                 return ""
             end
-            return (readfile(TokenPath):gsub("^%s*(.-)%s*$", "%1"))
+            local ok, val = pcall(readfile, TokenPath)
+            return ok and (val:gsub("^%s*(.-)%s*$", "%1")) or ""
         end
 
         local function DecodeTokenConfig(RawToken)
@@ -1299,28 +1286,117 @@ function KraviX:CreateWindow(config)
         local Token = TokenConfig.AccessToken
 
         local MiniSpotify = Window:CreateMiniUI({
-            Title = "SPOTIFY PLAYER", Width = 280, Height = 140
+            Title = "SPOTIFY PLAYER", Width = 290, Height = 175
         })
 
         local SBody = MiniSpotify.Body
 
-        local TrackTitle = Instance.new("TextLabel", SBody)
-        TrackTitle.Size = UDim2.new(1, 0, 0, 18)
+        local PlayerCard = Instance.new("Frame", SBody)
+        PlayerCard.Size = UDim2.new(1, 0, 0, 54)
+        PlayerCard.BackgroundColor3 = C.Bg4
+        PlayerCard.BorderSizePixel = 0
+        PlayerCard.ZIndex = 252
+        mkCorner(PlayerCard, 6)
+        mkStroke(PlayerCard, C.BorderBt, 1, 0)
+
+        local CoverLabel = Instance.new("ImageLabel", PlayerCard)
+        CoverLabel.Size = UDim2.new(0, 44, 0, 44)
+        CoverLabel.Position = UDim2.new(0, 5, 0, 5)
+        CoverLabel.BackgroundTransparency = 1
+        CoverLabel.Image = PlaceholderImage
+        CoverLabel.ZIndex = 253
+        mkCorner(CoverLabel, 4)
+
+        local InfoFrame = Instance.new("Frame", PlayerCard)
+        InfoFrame.Position = UDim2.new(0, 54, 0, 4)
+        InfoFrame.Size = UDim2.new(1, -60, 0, 46)
+        InfoFrame.BackgroundTransparency = 1
+        InfoFrame.ZIndex = 253
+
+        local TrackTitle = Instance.new("TextLabel", InfoFrame)
+        TrackTitle.Size = UDim2.new(1, 0, 0, 15)
         TrackTitle.BackgroundTransparency = 1
         TrackTitle.Text = "Spotify Player"
         TrackTitle.TextColor3 = C.White
-        TrackTitle.TextSize = 12
+        TrackTitle.TextSize = 11
         TrackTitle.Font = Enum.Font.GothamBold
         TrackTitle.TextXAlignment = Enum.TextXAlignment.Left
+        TrackTitle.TextTruncate = Enum.TextTruncate.AtEnd
+        TrackTitle.ZIndex = 254
 
-        local TrackArtist = Instance.new("TextLabel", SBody)
-        TrackArtist.Size = UDim2.new(1, 0, 0, 16)
+        local TrackArtist = Instance.new("TextLabel", InfoFrame)
+        TrackArtist.Position = UDim2.new(0, 0, 0, 15)
+        TrackArtist.Size = UDim2.new(1, 0, 0, 13)
         TrackArtist.BackgroundTransparency = 1
         TrackArtist.Text = "Nenhuma música tocando..."
         TrackArtist.TextColor3 = C.Sub
-        TrackArtist.TextSize = 10
+        TrackArtist.TextSize = 9
         TrackArtist.Font = Enum.Font.Gotham
         TrackArtist.TextXAlignment = Enum.TextXAlignment.Left
+        TrackArtist.TextTruncate = Enum.TextTruncate.AtEnd
+        TrackArtist.ZIndex = 254
+
+        local TrackAlbum = Instance.new("TextLabel", InfoFrame)
+        TrackAlbum.Position = UDim2.new(0, 0, 0, 28)
+        TrackAlbum.Size = UDim2.new(1, 0, 0, 13)
+        TrackAlbum.BackgroundTransparency = 1
+        TrackAlbum.Text = "Aguardando Spotify..."
+        TrackAlbum.TextColor3 = C.Muted
+        TrackAlbum.TextSize = 9
+        TrackAlbum.Font = Enum.Font.Gotham
+        TrackAlbum.TextXAlignment = Enum.TextXAlignment.Left
+        TrackAlbum.TextTruncate = Enum.TextTruncate.AtEnd
+        TrackAlbum.ZIndex = 254
+
+        local ProgFrame = Instance.new("Frame", SBody)
+        ProgFrame.Size = UDim2.new(1, 0, 0, 4)
+        ProgFrame.BackgroundColor3 = C.Bg5
+        ProgFrame.BorderSizePixel = 0
+        ProgFrame.ZIndex = 252
+        mkCorner(ProgFrame, 2)
+
+        local ProgFill = Instance.new("Frame", ProgFrame)
+        ProgFill.Size = UDim2.new(0, 0, 1, 0)
+        ProgFill.BackgroundColor3 = C.Accent
+        ProgFill.BorderSizePixel = 0
+        ProgFill.ZIndex = 253
+        mkCorner(ProgFill, 2)
+
+        local TimeLbl = Instance.new("TextLabel", SBody)
+        TimeLbl.Size = UDim2.new(1, 0, 0, 12)
+        TimeLbl.BackgroundTransparency = 1
+        TimeLbl.Text = "0:00 / 0:00"
+        TimeLbl.TextColor3 = C.Muted
+        TimeLbl.TextSize = 9
+        TimeLbl.Font = Enum.Font.Code
+        TimeLbl.TextXAlignment = Enum.TextXAlignment.Right
+        TimeLbl.ZIndex = 252
+
+        local CtrlRow = Instance.new("Frame", SBody)
+        CtrlRow.Size = UDim2.new(1, 0, 0, 24)
+        CtrlRow.BackgroundTransparency = 1
+        CtrlRow.ZIndex = 252
+
+        local CtrlList = Instance.new("UIListLayout", CtrlRow)
+        CtrlList.FillDirection = Enum.FillDirection.Horizontal
+        CtrlList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+        CtrlList.Padding = UDim.new(0, 12)
+
+        local function MakeBtn(icon, sz, cb)
+            local btn = Instance.new("ImageButton", CtrlRow)
+            btn.Size = UDim2.new(0, sz, 0, sz)
+            btn.BackgroundTransparency = 1
+            btn.Image = icon
+            btn.ImageColor3 = C.Text
+            btn.ZIndex = 253
+            btn.MouseButton1Click:Connect(cb)
+            return btn
+        end
+
+        local BtnPrev  = MakeBtn("rbxassetid://9607545497", 14, function() end)
+        BtnPrev.Rotation = 180
+        local BtnPlay  = MakeBtn("rbxassetid://9622475855", 18, function() end)
+        local BtnNext  = MakeBtn("rbxassetid://9607545497", 14, function() end)
 
         local TokenBox = MiniSpotify:AddTextbox("Cole seu Spotify Token...", Token, function(val)
             if writefile then writefile(TokenPath, val) end
@@ -1342,8 +1418,6 @@ function KraviX:CreateWindow(config)
 
     Window.SpotifyPlayerInstance = Window:SpotifyPlayer()
 
-
-
     HideWindow = function()
         if not Main.Visible then return end
         BtnHome.SetActive(false)
@@ -1361,7 +1435,12 @@ function KraviX:CreateWindow(config)
         Main.BackgroundTransparency = 0
         TopBar.BackgroundTransparency = 0; TabBar.BackgroundTransparency = 0
         Backdrop.BackgroundTransparency = 0.55; Main.ClipsDescendants = false
-        SidePanel.Visible = true
+
+        -- FECHA O DOCK BAR E TODAS AS MINI UIS ABERTAS
+        SidePanel.Visible = false
+        for _, mini in ipairs(CreatedMiniUIs) do
+            pcall(function() mini:Close() end)
+        end
     end
 
     ShowWindow = function()
