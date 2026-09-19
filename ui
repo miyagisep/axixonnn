@@ -1,4 +1,4 @@
--- 4
+-- 4.1
 local KraviX = {}
 
 local TweenService     = game:GetService("TweenService")
@@ -702,7 +702,7 @@ function KraviX:CreateWindow(config)
 
     local BtnHome  = createDockBtn({Icon = "rbxassetid://6026568198", Text = "H", Active = true})
     local BtnESP   = createDockBtn({Icon = "rbxassetid://6031075931", Text = "E", Active = false})
-    local BtnTheme = createDockBtn({Icon = "rbxassetid://6034287525", Text = "T", Active = false})
+    local BtnTheme = createDockBtn({Icon = "rbxassetid://6031075938", Text = "T", Active = false})
     local BtnCloud = createDockBtn({Icon = "rbxassetid://6031280882", Text = "C", Active = false})
 
     local SidePanel = DockOutline
@@ -1605,7 +1605,11 @@ function KraviX:CreateWindow(config)
             local RightScroll = makeCol(0.5,-1)
             RightScroll.Position = UDim2.new(0.5,2,0,0)
 
-            table.insert(tabEntry.SubTabs,{Btn=SBtn,Under=SUnder,Panel=SubPanel,Index=subIndex})
+            SubTab.Btn   = SBtn
+            SubTab.Under = SUnder
+            SubTab.Panel = SubPanel
+            SubTab.Index = subIndex
+            table.insert(tabEntry.SubTabs, SubTab)
 
             local SubFadeOverlay = Instance.new("Frame", SubPanel)
             SubFadeOverlay.Size = UDim2.new(1,0,1,0); SubFadeOverlay.BackgroundColor3 = C.Bg2
