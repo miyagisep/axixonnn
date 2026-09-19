@@ -1,4 +1,4 @@
--- 4
+-- 4.1
 local KraviX = {}
 
 local TweenService     = game:GetService("TweenService")
@@ -717,7 +717,9 @@ function KraviX:CreateWindow(config)
 
     function Window:CreateDockButton(opts)
         return createDockBtn(opts)
-       -- ===== MINI UI REUTILIZÁVEL =====
+    end
+
+    -- ===== MINI UI REUTILIZÁVEL =====
     local CreatedMiniUIs = {}
     local topMiniZIndex = 250
 
