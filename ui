@@ -1,4 +1,4 @@
--- 4
+-- 4.1
 local KraviX = {}
 
 local TweenService     = game:GetService("TweenService")
@@ -949,7 +949,9 @@ function KraviX:CreateWindow(config)
     -- ===== BOTÃO 1: HOME (MAIN WINDOW) =====
     BtnHome.Button.MouseButton1Click:Connect(function()
         ToggleWindow()
-     -- ===== BOTÃO 2: PLAYER LIST / WHITELIST & VIEW =====
+    end)
+
+    -- ===== BOTÃO 2: PLAYER LIST / WHITELIST & VIEW =====
     _G.KraviX_GlobalWhitelist = _G.KraviX_GlobalWhitelist or {}
     _G.KraviX_ViewingPlayer   = nil
 
@@ -958,6 +960,7 @@ function KraviX:CreateWindow(config)
         DefaultPosition = UDim2.new(0.5, -310, 0.5, -190),
         OnToggle = function(on) BtnTheme.SetActive(on) end
     })
+    BtnTheme.Button.MouseButton1Click:Connect(function() MiniPlayers:Toggle() end)
 
     -- Limpa layout padrao do MBody para usar um layout customizado de alta estetica
     for _, child in ipairs(MiniPlayers.Body:GetChildren()) do
