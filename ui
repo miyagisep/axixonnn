@@ -1,4 +1,4 @@
--- 4
+-- 4.1
 local KraviX = {}
 
 local TweenService     = game:GetService("TweenService")
@@ -931,10 +931,9 @@ function KraviX:CreateWindow(config)
     MiniConfigs:AddButton("Carregar Configuração", function()
         CreateNotification("KraviX", "Config '" .. (cfgBox.Text ~= "" and cfgBox.Text or "default") .. "' carregada!", 3, "info")
     end)
-    MiniConfigs:AddButton("Deletar Configuração", function()
-        CreateNotification("KraviX", "Config deletada!", 3, "error")
-    end)
-    BtnCloud.Button.MouseButton1Click:Connect(function() MiniCon    -- ===== BOTÃO 2: REAL 3D VIEWPORT ESP PREVIEW & VISUALS =====
+    BtnCloud.Button.MouseButton1Click:Connect(function() MiniConfigs:Toggle() end)
+
+    -- ===== BOTÃO 2: REAL 3D VIEWPORT ESP PREVIEW & VISUALS =====
     local MiniESP = Window:CreateMiniUI({
         Title = "ESP PREVIEW", Width = 260, Height = 245,
         OnToggle = function(on) BtnESP.SetActive(on) end
