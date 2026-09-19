@@ -1,4 +1,4 @@
--- 4
+-- 4.1
 local KraviX = {}
 
 local TweenService     = game:GetService("TweenService")
@@ -1340,12 +1340,36 @@ function KraviX:CreateWindow(config)
         end)
     end
 
+    local function ProjectViewportPoint(worldPos)
+        local camCF = ViewportCamera.CFrame
+        local localPos = camCF:PointToObjectSpace(worldPos)
+        if localPos.Z >= 0 then
+            return Vector2.new(0, 0), false
+        end
+        local fov = ViewportCamera.FieldOfView or 70
+        local viewSize = VFrame.AbsoluteSize
+        if viewSize.X <= 0 or viewSize.Y <= 0 then
+            viewSize = Vector2.new(320, 300)
+        end
+        local aspect = viewSize.X / viewSize.Y
+        local h = math.tan(math.rad(fov / 2)) * math.abs(localPos.Z)
+        local w = h * aspect
+        
+        local xNorm = (localPos.X / w + 1) / 2
+        local yNorm = (-localPos.Y / h + 1) / 2
+        
+        local pixelX = xNorm * viewSize.X
+        local pixelY = yNorm * viewSize.Y
+        
+        local inBounds = (xNorm >= -0.2 and xNorm <= 1.2 and yNorm >= -0.2 and yNorm <= 1.2)
+        return Vector2.new(pixelX, pixelY), inBounds
+    end
+
     RunService.Heartbeat:Connect(function()
         if not CurrentPreviewModel or not VFrame.Visible then return end
         local root = CurrentPreviewModel:FindFirstChild("HumanoidRootPart") or CurrentPreviewModel:FindFirstChild("Torso") or CurrentPreviewModel.PrimaryPart
         if not root then return end
 
-        ViewportCamera.ViewportSize = VFrame.AbsoluteSize
         ViewportCamera.CFrame = CFrame.new(root.CFrame:ToWorldSpace(OFFSET).Position, root.Position)
 
         for original, clone in pairs(RenderObjects) do
@@ -1360,7 +1384,7 @@ function KraviX:CreateWindow(config)
             local head = CurrentPreviewModel:FindFirstChild("Head")
             local cloneHead = head and RenderObjects[head]
             if cloneHead then
-                local pos, vis = ViewportCamera:WorldToViewportPoint(cloneHead.Position)
+                local pos, vis = ProjectViewportPoint(cloneHead.Position)
                 if vis then
                     HeadDotDot.Position = UDim2.new(0, pos.X, 0, pos.Y)
                     HeadDotDot.BackgroundColor3 = HeadDotColor
@@ -1387,8 +1411,8 @@ function KraviX:CreateWindow(config)
                 local clone2 = orig2 and RenderObjects[orig2]
                 
                 if clone1 and clone2 then
-                    local pos1, vis1 = ViewportCamera:WorldToViewportPoint(clone1.Position)
-                    local pos2, vis2 = ViewportCamera:WorldToViewportPoint(clone2.Position)
+                    local pos1, vis1 = ProjectViewportPoint(clone1.Position)
+                    local pos2, vis2 = ProjectViewportPoint(clone2.Position)
                     if vis1 and vis2 then
                         lineIndex = lineIndex + 1
                         local lineFrame = GetSkeletonLine(lineIndex)
@@ -1632,8 +1656,7 @@ function KraviX:CreateWindow(config)
             SkeletonContainer.Visible = v
         end,
         WorldToViewport     = function(_, worldPos)
-            local pos, vis = ViewportCamera:WorldToViewportPoint(worldPos)
-            return Vector2.new(pos.X, pos.Y), vis
+            return ProjectViewportPoint(worldPos)
         end,
         AddCustomElement    = function(_, guiObj)
             if guiObj and guiObj:IsA("GuiObject") then
