@@ -1,4 +1,4 @@
--- 4
+-- 4.1
 local KraviX = {}
 
 local TweenService     = game:GetService("TweenService")
@@ -951,25 +951,248 @@ function KraviX:CreateWindow(config)
         ToggleWindow()
     end)
 
-    -- ===== BOTÃO 2: THEME & STYLE =====
-    local MiniStyle = Window:CreateMiniUI({
-        Title = "Theme & Style", Width = 280, Height = 175,
-        DefaultPosition = UDim2.new(0.5, -300, 0.5, -90),
+    -- ===== BOTÃO 2: PLAYER LIST / WHITELIST & VIEW =====
+    _G.KraviX_GlobalWhitelist = _G.KraviX_GlobalWhitelist or {}
+    _G.KraviX_ViewingPlayer   = nil
+
+    local MiniPlayers = Window:CreateMiniUI({
+        Title = "Player List & Whitelist", Width = 320, Height = 340,
+        DefaultPosition = UDim2.new(0.5, -300, 0.5, -170),
         OnToggle = function(on) BtnTheme.SetActive(on) end
     })
-    MiniStyle:AddLabel("Ajustes visuais e utilitários do servidor", C.Sub)
-    MiniStyle:AddButton("Copiar JobID do Servidor", function()
-        setclipboard(game.JobId)
-        CreateNotification("KraviX", "JobID copiado com sucesso!", 3, "info")
+
+    -- Limpa layout padrao do MBody para usar um layout customizado com busca e lista
+    for _, child in ipairs(MiniPlayers.Body:GetChildren()) do
+        if child:IsA("UIListLayout") or child:IsA("UIPadding") then
+            child:Destroy()
+        end
+    end
+
+    -- Top Header Control Bar (Caixa de busca + Botao Reset View)
+    local TopControls = Instance.new("Frame", MiniPlayers.Body)
+    TopControls.Size = UDim2.new(1, 0, 0, 28)
+    TopControls.BackgroundTransparency = 1
+    TopControls.ZIndex = MiniPlayers.Frame.ZIndex + 2
+    TopControls:SetAttribute("RelZIndex", 2)
+
+    local SearchBox = Instance.new("TextBox", TopControls)
+    SearchBox.Size = UDim2.new(1, -94, 1, 0)
+    SearchBox.Position = UDim2.new(0, 0, 0, 0)
+    SearchBox.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
+    SearchBox.PlaceholderText = "Search player..."
+    SearchBox.PlaceholderColor3 = C.Muted
+    SearchBox.Text = ""
+    SearchBox.TextColor3 = C.White
+    SearchBox.TextSize = 11
+    SearchBox.Font = Enum.Font.Gotham
+    SearchBox.ClearTextOnFocus = false
+    SearchBox.ZIndex = MiniPlayers.Frame.ZIndex + 2
+    SearchBox:SetAttribute("RelZIndex", 2)
+    mkCorner(SearchBox, 6)
+    local sbStroke = mkStroke(SearchBox, C.BorderBt, 1, 0)
+    sbStroke:SetAttribute("RelZIndex", 2)
+    mkPad(SearchBox, 0, 0, 8, 8)
+
+    SearchBox.Focused:Connect(function() Tween(sbStroke, {Color = C.Accent}, 0.12):Play() end)
+    SearchBox.FocusLost:Connect(function() Tween(sbStroke, {Color = C.BorderBt}, 0.12):Play() end)
+
+    local ResetCamBtn = Instance.new("TextButton", TopControls)
+    ResetCamBtn.Size = UDim2.new(0, 88, 1, 0)
+    ResetCamBtn.Position = UDim2.new(1, -88, 0, 0)
+    ResetCamBtn.BackgroundColor3 = Color3.fromRGB(22, 22, 30)
+    ResetCamBtn.Text = "Reset View"
+    ResetCamBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+    ResetCamBtn.TextSize = 10
+    ResetCamBtn.Font = Enum.Font.GothamBold
+    ResetCamBtn.AutoButtonColor = false
+    ResetCamBtn.ZIndex = MiniPlayers.Frame.ZIndex + 2
+    ResetCamBtn:SetAttribute("RelZIndex", 2)
+    mkCorner(ResetCamBtn, 6)
+    local rstStroke = mkStroke(ResetCamBtn, Color3.fromRGB(45, 45, 58), 1, 0)
+    rstStroke:SetAttribute("RelZIndex", 2)
+
+    ResetCamBtn.MouseEnter:Connect(function() Tween(ResetCamBtn, {BackgroundColor3 = C.Accent, TextColor3 = C.White}, 0.1):Play() end)
+    ResetCamBtn.MouseLeave:Connect(function() Tween(ResetCamBtn, {BackgroundColor3 = Color3.fromRGB(22, 22, 30), TextColor3 = Color3.fromRGB(200, 200, 200)}, 0.1):Play() end)
+
+    ResetCamBtn.MouseButton1Click:Connect(function()
+        _G.KraviX_ViewingPlayer = nil
+        pcall(function()
+            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+                workspace.CurrentCamera.CameraSubject = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            end
+        end)
+        CreateNotification("Camera", "Visão da câmera resetada.", 3, "info")
     end)
-    MiniStyle:AddButton("Reentrar no Servidor (Rejoin)", function()
-        game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
+
+    -- Scrolling Frame para a lista de players
+    local PlayerScroll = Instance.new("ScrollingFrame", MiniPlayers.Body)
+    PlayerScroll.Size = UDim2.new(1, 0, 1, -36)
+    PlayerScroll.Position = UDim2.new(0, 0, 0, 36)
+    PlayerScroll.BackgroundTransparency = 1
+    PlayerScroll.BorderSizePixel = 0
+    PlayerScroll.ScrollBarThickness = 3
+    PlayerScroll.ScrollBarImageColor3 = C.Accent
+    PlayerScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+    PlayerScroll.ZIndex = MiniPlayers.Frame.ZIndex + 2
+    PlayerScroll:SetAttribute("RelZIndex", 2)
+
+    local ScrollLayout = Instance.new("UIListLayout", PlayerScroll)
+    ScrollLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    ScrollLayout.Padding = UDim.new(0, 5)
+
+    local function updateCanvas()
+        PlayerScroll.CanvasSize = UDim2.new(0, 0, 0, ScrollLayout.AbsoluteContentSize.Y + 10)
+    end
+    ScrollLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvas)
+
+    local function refreshPlayerList()
+        for _, child in ipairs(PlayerScroll:GetChildren()) do
+            if child:IsA("Frame") then child:Destroy() end
+        end
+
+        local filter = SearchBox.Text:lower()
+
+        for _, plr in ipairs(Players:GetPlayers()) do
+            if plr ~= LocalPlayer then
+                local dName = plr.DisplayName or plr.Name
+                local uName = plr.Name
+                if filter == "" or dName:lower():find(filter, 1, true) or uName:lower():find(filter, 1, true) then
+                    local isWL = (_G.KraviX_GlobalWhitelist[plr.UserId] == true) or (_G.KraviX_GlobalWhitelist[plr.Name] == true)
+                    local isView = (_G.KraviX_ViewingPlayer == plr)
+
+                    local Item = Instance.new("Frame", PlayerScroll)
+                    Item.Size = UDim2.new(1, -4, 0, 34)
+                    Item.BackgroundColor3 = isWL and Color3.fromRGB(24, 18, 36) or Color3.fromRGB(16, 16, 22)
+                    Item.BorderSizePixel = 0
+                    Item.ZIndex = MiniPlayers.Frame.ZIndex + 2
+                    Item:SetAttribute("RelZIndex", 2)
+                    mkCorner(Item, 6)
+                    local itemStroke = mkStroke(Item, isWL and C.Accent or Color3.fromRGB(30, 30, 40), 1, 0)
+                    itemStroke:SetAttribute("RelZIndex", 2)
+
+                    local NameLabel = Instance.new("TextLabel", Item)
+                    NameLabel.Size = UDim2.new(1, -125, 1, 0)
+                    NameLabel.Position = UDim2.new(0, 8, 0, 0)
+                    NameLabel.BackgroundTransparency = 1
+                    NameLabel.Text = dName .. " (@" .. uName .. ")"
+                    NameLabel.TextColor3 = isWL and C.Accent2 or C.White
+                    NameLabel.TextSize = 10
+                    NameLabel.Font = Enum.Font.GothamBold
+                    NameLabel.TextXAlignment = Enum.TextXAlignment.Left
+                    NameLabel.TextTruncate = Enum.TextTruncate.AtEnd
+                    NameLabel.ZIndex = MiniPlayers.Frame.ZIndex + 3
+                    NameLabel:SetAttribute("RelZIndex", 3)
+
+                    -- View Button
+                    local ViewBtn = Instance.new("TextButton", Item)
+                    ViewBtn.Size = UDim2.new(0, 52, 0, 22)
+                    ViewBtn.Position = UDim2.new(1, -114, 0.5, -11)
+                    ViewBtn.BackgroundColor3 = isView and C.Green or Color3.fromRGB(28, 28, 38)
+                    ViewBtn.Text = isView and "Viewing" or "View"
+                    ViewBtn.TextColor3 = isView and C.Black or C.White
+                    ViewBtn.TextSize = 10
+                    ViewBtn.Font = Enum.Font.GothamBold
+                    ViewBtn.AutoButtonColor = false
+                    ViewBtn.ZIndex = MiniPlayers.Frame.ZIndex + 3
+                    ViewBtn:SetAttribute("RelZIndex", 3)
+                    mkCorner(ViewBtn, 4)
+
+                    ViewBtn.MouseButton1Click:Connect(function()
+                        if _G.KraviX_ViewingPlayer == plr then
+                            _G.KraviX_ViewingPlayer = nil
+                            pcall(function()
+                                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+                                    workspace.CurrentCamera.CameraSubject = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+                                end
+                            end)
+                            CreateNotification("View", "Visão resetada.", 2, "info")
+                        else
+                            if plr.Character and plr.Character:FindFirstChildOfClass("Humanoid") then
+                                _G.KraviX_ViewingPlayer = plr
+                                workspace.CurrentCamera.CameraSubject = plr.Character:FindFirstChildOfClass("Humanoid")
+                                CreateNotification("View", "Assistindo: " .. dName, 2, "success")
+                            else
+                                CreateNotification("View", "Jogador sem personagem ativo.", 2, "error")
+                            end
+                        end
+                        refreshPlayerList()
+                    end)
+
+                    -- Whitelist Button
+                    local WlBtn = Instance.new("TextButton", Item)
+                    WlBtn.Size = UDim2.new(0, 56, 0, 22)
+                    WlBtn.Position = UDim2.new(1, -58, 0.5, -11)
+                    WlBtn.BackgroundColor3 = isWL and C.Accent or Color3.fromRGB(28, 28, 38)
+                    WlBtn.Text = isWL and "Remove" or "Whitelist"
+                    WlBtn.TextColor3 = isWL and C.White or Color3.fromRGB(180, 180, 180)
+                    WlBtn.TextSize = 9
+                    WlBtn.Font = Enum.Font.GothamBold
+                    WlBtn.AutoButtonColor = false
+                    WlBtn.ZIndex = MiniPlayers.Frame.ZIndex + 3
+                    WlBtn:SetAttribute("RelZIndex", 3)
+                    mkCorner(WlBtn, 4)
+
+                    WlBtn.MouseButton1Click:Connect(function()
+                        if isWL then
+                            _G.KraviX_GlobalWhitelist[plr.UserId] = nil
+                            _G.KraviX_GlobalWhitelist[plr.Name] = nil
+                            CreateNotification("Whitelist", dName .. " removido da Whitelist!", 3, "info")
+                        else
+                            _G.KraviX_GlobalWhitelist[plr.UserId] = true
+                            _G.KraviX_GlobalWhitelist[plr.Name] = true
+                            CreateNotification("Whitelist", dName .. " adicionado à Whitelist!", 3, "success")
+                        end
+                        refreshPlayerList()
+                    end)
+                end
+            end
+        end
+        updateCanvas()
+    end
+
+    SearchBox:GetPropertyChangedSignal("Text"):Connect(refreshPlayerList)
+    Players.PlayerAdded:Connect(function() task.delay(0.2, refreshPlayerList) end)
+    Players.PlayerRemoving:Connect(function(p)
+        if _G.KraviX_ViewingPlayer == p then
+            _G.KraviX_ViewingPlayer = nil
+            pcall(function()
+                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+                    workspace.CurrentCamera.CameraSubject = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+                end
+            end)
+        end
+        task.delay(0.2, refreshPlayerList)
     end)
-    MiniStyle:AddButton("Copiar Script de Rejoin", function()
-        setclipboard('game:GetService("TeleportService"):TeleportToPlaceInstance(' .. game.PlaceId .. ', "' .. game.JobId .. '", game.Players.LocalPlayer)')
-        CreateNotification("KraviX", "Script de rejoin copiado!", 3, "success")
+    refreshPlayerList()
+
+    BtnTheme.Button.MouseButton1Click:Connect(function()
+        refreshPlayerList()
+        MiniPlayers:Toggle()
     end)
-    BtnTheme.Button.MouseButton1Click:Connect(function() MiniStyle:Toggle() end)
+
+    RunService.Heartbeat:Connect(function()
+        if _G.KraviX_ViewingPlayer then
+            local vp = _G.KraviX_ViewingPlayer
+            if not vp or not vp.Parent or not vp.Character then
+                _G.KraviX_ViewingPlayer = nil
+                pcall(function()
+                    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+                        workspace.CurrentCamera.CameraSubject = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+                    end
+                end)
+            else
+                local hum = vp.Character:FindFirstChildOfClass("Humanoid")
+                if not hum or hum.Health <= 0 then
+                    _G.KraviX_ViewingPlayer = nil
+                    pcall(function()
+                        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+                            workspace.CurrentCamera.CameraSubject = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+                        end
+                    end)
+                end
+            end
+        end
+    end)
 
     -- ===== BOTÃO 3: CONFIGURATIONS =====
     local MiniConfigs = Window:CreateMiniUI({
