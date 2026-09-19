@@ -1,4 +1,4 @@
--- 4.1
+-- 4
 local KraviX = {}
 
 local TweenService     = game:GetService("TweenService")
@@ -1118,6 +1118,25 @@ function KraviX:CreateWindow(config)
         return PreviewHighlight
     end
 
+    local PreviewSelectionBox = nil
+    local function GetPreviewSelectionBox()
+        if not PreviewSelectionBox or not pcall(function() return PreviewSelectionBox.Parent end) then
+            local ok, sb = pcall(function() return Instance.new("SelectionBox") end)
+            if ok and sb then
+                sb.Name = "PreviewSelectionBox"
+                sb.Color3 = Color3.fromRGB(255, 255, 255)
+                sb.SurfaceColor3 = C.Accent
+                sb.SurfaceTransparency = 0.5
+                sb.LineThickness = 0.04
+                sb.Visible = false
+                sb.Adornee = ViewmodelFolder
+                pcall(function() sb.Parent = ViewmodelFolder end)
+                PreviewSelectionBox = sb
+            end
+        end
+        return PreviewSelectionBox
+    end
+
     local TracerLine = Instance.new("Frame", Overlay)
     TracerLine.Size = UDim2.new(0, 1, 0, 45)
     TracerLine.Position = UDim2.new(0.5, 0, 1, -45)
@@ -1165,12 +1184,16 @@ function KraviX:CreateWindow(config)
     }
 
     local RenderObjects = {}
+    local OriginalTextures = {}
+    local OriginalMaterials = {}
+    local OriginalColors = {}
+    local OriginalTransparencies = {}
     local DescendantConnections = {}
     local CurrentPreviewModel = nil
     local OFFSET = CFrame.new(0, 2.3, -8.0)
     local ChamsActive = false
     local ChamColor = C.Accent
-    local ChamTrans = 0.5
+    local ChamTrans = 0.3
     local SkeletonActive = false
     local SkeletonColor = C.Accent
     local HeadDotActive = false
@@ -1182,12 +1205,18 @@ function KraviX:CreateWindow(config)
         Accoutrement = true,
         Pants = true,
         Shirt = true,
+        ShirtGraphic = true,
+        BodyColors = true,
         Humanoid = true,
         Highlight = true
     }
 
     local function ClearPreviewObjects()
         table.clear(RenderObjects)
+        table.clear(OriginalTextures)
+        table.clear(OriginalMaterials)
+        table.clear(OriginalColors)
+        table.clear(OriginalTransparencies)
         for _, conn in ipairs(DescendantConnections) do
             conn:Disconnect()
         end
@@ -1195,17 +1224,24 @@ function KraviX:CreateWindow(config)
         if PreviewHighlight then
             pcall(function() PreviewHighlight.Parent = nil end)
         end
+        if PreviewSelectionBox then
+            pcall(function() PreviewSelectionBox.Parent = nil end)
+        end
         ViewmodelFolder:ClearAllChildren()
         local hl = GetPreviewHighlight()
-        if hl then
-            pcall(function() hl.Parent = ViewmodelFolder end)
-        end
+        if hl then pcall(function() hl.Parent = ViewmodelFolder end) end
+        local sb = GetPreviewSelectionBox()
+        if sb then pcall(function() sb.Parent = ViewmodelFolder end) end
     end
 
     local function RemoveObjectFromPreview(obj)
         local clone = RenderObjects[obj]
         if not clone then return end
         RenderObjects[obj] = nil
+        OriginalTextures[obj] = nil
+        OriginalMaterials[obj] = nil
+        OriginalColors[obj] = nil
+        OriginalTransparencies[obj] = nil
         if clone.Parent and clone.Parent:IsA("Accoutrement") then
             clone.Parent:Destroy()
         else
@@ -1227,21 +1263,39 @@ function KraviX:CreateWindow(config)
             clone.Anchored = true
             clone.CanCollide = false
             RenderObjects[obj] = clone
+            OriginalMaterials[obj] = clone.Material
+            OriginalColors[obj] = clone.Color
+            OriginalTransparencies[obj] = clone.Transparency
+            if clone:IsA("MeshPart") then
+                OriginalTextures[obj] = clone.TextureID
+            end
             if ChamsActive then
                 clone.Color = ChamColor
                 clone.Material = Enum.Material.Neon
                 clone.Transparency = ChamTrans
+                if clone:IsA("MeshPart") then clone.TextureID = "" end
             end
         elseif obj:IsA("Accoutrement") then
             if obj:FindFirstChild("Handle") and clone:FindFirstChild("Handle") then
                 clone.Handle.Anchored = true
                 clone.Handle.CanCollide = false
                 RenderObjects[obj.Handle] = clone.Handle
+                OriginalMaterials[obj.Handle] = clone.Handle.Material
+                OriginalColors[obj.Handle] = clone.Handle.Color
+                OriginalTransparencies[obj.Handle] = clone.Handle.Transparency
+                if clone.Handle:IsA("MeshPart") then
+                    OriginalTextures[obj.Handle] = clone.Handle.TextureID
+                end
                 if ChamsActive then
                     clone.Handle.Color = ChamColor
                     clone.Handle.Material = Enum.Material.Neon
                     clone.Handle.Transparency = ChamTrans
+                    if clone.Handle:IsA("MeshPart") then clone.Handle.TextureID = "" end
                 end
+            end
+        elseif obj:IsA("Clothing") or obj:IsA("ShirtGraphic") then
+            if ChamsActive then
+                pcall(function() clone.Enabled = false end)
             end
         elseif obj:IsA("Humanoid") then
             clone.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
@@ -1291,6 +1345,7 @@ function KraviX:CreateWindow(config)
         local root = CurrentPreviewModel:FindFirstChild("HumanoidRootPart") or CurrentPreviewModel:FindFirstChild("Torso") or CurrentPreviewModel.PrimaryPart
         if not root then return end
 
+        ViewportCamera.ViewportSize = VFrame.AbsoluteSize
         ViewportCamera.CFrame = CFrame.new(root.CFrame:ToWorldSpace(OFFSET).Position, root.Position)
 
         for original, clone in pairs(RenderObjects) do
@@ -1372,6 +1427,7 @@ function KraviX:CreateWindow(config)
         NameColor         = C.White,
         Distance          = true,
         DistColor         = C.Sub,
+        DistanceColor     = C.Sub,
         Weapon            = false,
         WeaponESP         = false,
         WeaponColor       = C.White,
@@ -1388,7 +1444,7 @@ function KraviX:CreateWindow(config)
         SkeletonColor     = C.Accent,
         Chams             = false,
         ChamsColor        = C.Accent,
-        ChamsTrans        = 0.5,
+        ChamsTrans        = 0.3,
     }
 
     local function applyESPPreviewUpdate(cfg)
@@ -1416,6 +1472,7 @@ function KraviX:CreateWindow(config)
 
         if cfg.Distance ~= nil and DistLbl then DistLbl.Visible = cfg.Distance end
         if cfg.DistColor ~= nil and DistLbl then DistLbl.TextColor3 = cfg.DistColor end
+        if cfg.DistanceColor ~= nil and DistLbl then DistLbl.TextColor3 = cfg.DistanceColor end
 
         if cfg.Weapon ~= nil or cfg.WeaponESP ~= nil or cfg.WeaponColor ~= nil or cfg.WeaponText ~= nil then
             if cfg.Weapon ~= nil then WeaponLbl.Visible = cfg.Weapon end
@@ -1432,12 +1489,27 @@ function KraviX:CreateWindow(config)
 
         if cfg.Highlight ~= nil or cfg.HLFillColor ~= nil or cfg.HLOutlineColor ~= nil or cfg.HLFillTrans ~= nil or cfg.HLOutTrans ~= nil then
             local hl = GetPreviewHighlight()
-            if hl then
-                if cfg.Highlight ~= nil then hl.Enabled = (cfg.Highlight == true) end
-                if cfg.HLFillColor ~= nil then hl.FillColor = cfg.HLFillColor end
-                if cfg.HLOutlineColor ~= nil then hl.OutlineColor = cfg.HLOutlineColor end
-                if cfg.HLFillTrans ~= nil then hl.FillTransparency = cfg.HLFillTrans end
-                if cfg.HLOutTrans ~= nil then hl.OutlineTransparency = cfg.HLOutTrans end
+            local sb = GetPreviewSelectionBox()
+            if cfg.Highlight ~= nil then
+                local on = (cfg.Highlight == true)
+                if hl then hl.Enabled = on end
+                if sb then sb.Visible = on end
+            end
+            if cfg.HLFillColor ~= nil then
+                if hl then hl.FillColor = cfg.HLFillColor end
+                if sb then sb.SurfaceColor3 = cfg.HLFillColor end
+            end
+            if cfg.HLOutlineColor ~= nil then
+                if hl then hl.OutlineColor = cfg.HLOutlineColor end
+                if sb then sb.Color3 = cfg.HLOutlineColor end
+            end
+            if cfg.HLFillTrans ~= nil then
+                if hl then hl.FillTransparency = cfg.HLFillTrans end
+                if sb then sb.SurfaceTransparency = cfg.HLFillTrans end
+            end
+            if cfg.HLOutTrans ~= nil then
+                if hl then hl.OutlineTransparency = cfg.HLOutTrans end
+                if sb then sb.Transparency = cfg.HLOutTrans end
             end
         end
 
@@ -1455,17 +1527,30 @@ function KraviX:CreateWindow(config)
             if cfg.Chams ~= nil then ChamsActive = (cfg.Chams == true) end
             if cfg.ChamsColor ~= nil then ChamColor = cfg.ChamsColor end
             if cfg.ChamsTrans ~= nil then ChamTrans = cfg.ChamsTrans end
+
+            for _, child in ipairs(ViewmodelFolder:GetDescendants()) do
+                if child:IsA("Clothing") or child:IsA("ShirtGraphic") then
+                    pcall(function() child.Enabled = not ChamsActive end)
+                end
+            end
+
             for original, clone in pairs(RenderObjects) do
                 if clone and clone.Parent then
                     if ChamsActive then
-                        clone.Color = ChamColor
-                        clone.Material = Enum.Material.Neon
-                        if clone:IsA("BasePart") then clone.Transparency = ChamTrans or 0.3 end
+                        if clone:IsA("BasePart") then
+                            clone.Color = ChamColor
+                            clone.Material = Enum.Material.Neon
+                            clone.Transparency = ChamTrans or 0.3
+                            if clone:IsA("MeshPart") then clone.TextureID = "" end
+                        end
                     else
                         if original:IsA("BasePart") then
-                            clone.Color = original.Color
-                            clone.Material = original.Material
-                            clone.Transparency = original.Transparency
+                            clone.Color = OriginalColors[original] or original.Color
+                            clone.Material = OriginalMaterials[original] or original.Material
+                            clone.Transparency = OriginalTransparencies[original] or original.Transparency
+                            if clone:IsA("MeshPart") and original:IsA("MeshPart") then
+                                clone.TextureID = OriginalTextures[original] or original.TextureID
+                            end
                         end
                     end
                 end
@@ -1515,6 +1600,7 @@ function KraviX:CreateWindow(config)
         WeaponLabel         = WeaponLbl,
         HeadDotDot          = HeadDotDot,
         Highlight           = GetPreviewHighlight(),
+        SelectionBox        = GetPreviewSelectionBox(),
         TracerLine          = TracerLine,
         SkeletonContainer   = SkeletonContainer,
 
@@ -1540,6 +1626,8 @@ function KraviX:CreateWindow(config)
             HeadDotDot.Visible = v
             local hl = GetPreviewHighlight()
             if hl then hl.Enabled = v end
+            local sb = GetPreviewSelectionBox()
+            if sb then sb.Visible = v end
             TracerLine.Visible = v
             SkeletonContainer.Visible = v
         end,
