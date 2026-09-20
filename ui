@@ -1,4 +1,4 @@
--- 4.1
+-- 4
 local KraviX = {}
 
 local TweenService     = game:GetService("TweenService")
@@ -1364,7 +1364,9 @@ function KraviX:CreateWindow(config)
                             end
                         end
                         refreshPlayerList()
-                      -- Whitelist Button
+                    end)
+
+                    -- Whitelist Button
                     local WlBtn = Instance.new("TextButton", Card)
                     WlBtn.Size = UDim2.new(0, 62, 0, 24)
                     WlBtn.Position = UDim2.new(1, -66, 0.5, -12)
@@ -1394,6 +1396,7 @@ function KraviX:CreateWindow(config)
                     end)
                 end
             end
+        end
         StatsLabel.Text = "Server Players: " .. (#allPlayers - 1) .. "  |  Whitelisted: " .. wlCount
         updateCanvas()
     end
