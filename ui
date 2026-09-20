@@ -1,4 +1,4 @@
--- 4.1
+-- 4
 local KraviX = {}
 
 local TweenService     = game:GetService("TweenService")
@@ -426,7 +426,7 @@ function KraviX:CreateWindow(config)
     local activeTabIndex = 0
     local Window = {Tabs={}, Keybind=Enum.KeyCode.Unknown}
 
-    local function wrapNotif(a, b, c, ntype)
+    local function wrapNotif(a, b, c, d, ntype)
         if typeof(a) == "table" then
             CreateNotification(b, c, tonumber(d) or 3, ntype)
         else
@@ -434,10 +434,10 @@ function KraviX:CreateWindow(config)
         end
     end
 
-    Window.Notify        = function(a, b, c, d) wrapNotif(a, b, c, nil) end
-    Window.NotifySuccess = function(a, b, c, d) wrapNotif(a, b, c, "success") end
-    Window.NotifyError   = function(a, b, c, d) wrapNotif(a, b, c, "error") end
-    Window.NotifyInfo    = function(a, b, c, d) wrapNotif(a, b, c, "info") end
+    Window.Notify        = function(a, b, c, d) wrapNotif(a, b, c, d, nil) end
+    Window.NotifySuccess = function(a, b, c, d) wrapNotif(a, b, c, d, "success") end
+    Window.NotifyError   = function(a, b, c, d) wrapNotif(a, b, c, d, "error") end
+    Window.NotifyInfo    = function(a, b, c, d) wrapNotif(a, b, c, d, "info") end
 
     Window.Flags   = {}
     Window.Options = {}
@@ -2666,10 +2666,13 @@ function KraviX:CreateWindow(config)
                         else return tonumber(string.format("%."..rnd.."f",n)) end
                     end
                     local function SetPx(px)
-                        local pct = math.clamp(px/Track.AbsoluteSize.X,0,1)
-                        local nv  = Round(min+(max-min)*pct)
+                        local trackWidth = Track.AbsoluteSize.X
+                        if trackWidth <= 0 then return end
+                        local pct = math.clamp(px / trackWidth, 0, 1)
+                        local range = max - min
+                        local nv  = Round(min + range * pct)
                         Slider.Value = nv; ValLbl.Text = tostring(nv)
-                        Fill.Size = UDim2.new(pct,0,1,0); callback(nv)
+                        Fill.Size = UDim2.new(pct, 0, 1, 0); callback(nv)
                         if flagKey then Window.Flags[flagKey] = nv end
                     end
                     local drag = false
@@ -2687,9 +2690,11 @@ function KraviX:CreateWindow(config)
                         end
                     end)
                     function Slider:Set(v)
-                        v = math.clamp(Round(v),min,max); Slider.Value = v
+                        v = math.clamp(Round(v), min, max); Slider.Value = v
                         ValLbl.Text = tostring(v)
-                        Fill.Size = UDim2.new((v-min)/(max-min),0,1,0); callback(v)
+                        local range = max - min
+                        local pct = range > 0 and math.clamp((v - min) / range, 0, 1) or 0
+                        Fill.Size = UDim2.new(pct, 0, 1, 0); callback(v)
                         if flagKey then Window.Flags[flagKey] = v end
                     end
                     task.defer(function() callback(val) end)
@@ -2699,7 +2704,11 @@ function KraviX:CreateWindow(config)
                 function Section:AddDropdown(cfg)
                     cfg = cfg or {}
                     local options  = cfg.Values  or {}
-                    local selected = cfg.Default or options[1]
+                    local selected = cfg.Default
+                    if type(selected) == "number" and options[selected] then
+                        selected = options[selected]
+                    end
+                    if not selected then selected = options[1] end
                     local callback = cfg.Callback or function() end
                     local opened   = false
 
@@ -2905,7 +2914,11 @@ function KraviX:CreateWindow(config)
 
                 function Section:AddKeybind(cfg)
                     cfg = cfg or {}
-                    local cur = cfg.Default or Enum.KeyCode.E; local listen = false
+                    local cur = cfg.Default or Enum.KeyCode.E
+                    if typeof(cur) == "string" then
+                        cur = Enum.KeyCode[cur] or Enum.KeyCode.E
+                    end
+                    local listen = false
                     local callback = cfg.Callback or function() end
                     local Row = Instance.new("Frame")
                     Row.Size = UDim2.new(1,0,0,26); Row.BackgroundTransparency = 1; Row.ZIndex = 13
@@ -2950,6 +2963,8 @@ function KraviX:CreateWindow(config)
                     cfg = cfg or {}
                     local cur
                     if type(cfg.Default) == "table" and cfg.Default.type then cur = cfg.Default
+                    elseif typeof(cfg.Default) == "EnumItem" and cfg.Default.EnumType == Enum.UserInputType then
+                        cur = {type="mouse", value=cfg.Default}
                     else cur = {type="key", value=cfg.Default or Enum.KeyCode.E} end
                     local listen     = false
                     local _ignoreNext = false
@@ -3007,8 +3022,13 @@ function KraviX:CreateWindow(config)
                         if flagKey then Window.Flags[flagKey] = cur end
                     end)
                     function Bind:Set(b)
-                        if type(b) == "table" and b.type then cur = b
-                        else cur = {type="key",value=b} end
+                        if type(b) == "table" and b.type then
+                            cur = b
+                        elseif typeof(b) == "EnumItem" and b.EnumType == Enum.UserInputType then
+                            cur = {type="mouse", value=b}
+                        else
+                            cur = {type="key", value=b}
+                        end
                         Bind.Value = cur; KB.Text = bindLabel(cur); KB.TextColor3 = C.Sub; callback(cur)
                         if flagKey then Window.Flags[flagKey] = cur end
                     end
