@@ -1,4 +1,4 @@
--- 4
+-- 4.1
 local KraviX = {}
 
 local TweenService     = game:GetService("TweenService")
@@ -7,6 +7,7 @@ local RunService       = game:GetService("RunService")
 local CoreGui          = game:GetService("CoreGui")
 local Players          = game:GetService("Players")
 local SoundService     = game:GetService("SoundService")
+local HttpService      = game:GetService("HttpService")
 
 local LocalPlayer = Players.LocalPlayer
 local Mouse       = LocalPlayer:GetMouse()
@@ -2787,8 +2788,9 @@ function KraviX:CreateWindow(config)
                         end)
                     end
 
+                    local _justOpenedDrop = false
                     local function openDropdown()
-                        opened = true
+                        opened = true; _justOpenedDrop = true
                         local abs = Sel.AbsolutePosition
                         local fH  = #options*24+8
                         local vpH = ScreenGui.AbsoluteSize.Y
@@ -2815,8 +2817,12 @@ function KraviX:CreateWindow(config)
                         if opened then closeDropdown() else openDropdown() end
                     end)
                     UserInputService.InputBegan:Connect(function(inp)
-                        if inp.UserInputType == Enum.UserInputType.MouseButton1 and not _hover then
-                            if opened then closeDropdown() end
+                        if inp.UserInputType == Enum.UserInputType.MouseButton1 then
+                            if _justOpenedDrop then
+                                _justOpenedDrop = false
+                                return
+                            end
+                            if not _hover and opened then closeDropdown() end
                         end
                     end)
                     Main:GetPropertyChangedSignal("Visible"):Connect(function()
@@ -3204,9 +3210,11 @@ function KraviX:CreateWindow(config)
                         end
                     end)
 
+                    local _justOpenedPicker = false
                     SwBtn.MouseButton1Click:Connect(function()
                         pickerOpen = not pickerOpen
                         if pickerOpen then
+                            _justOpenedPicker = true
                             for _, obj in ipairs(ScreenGui:GetDescendants()) do
                                 if obj.Name == "KxColorPicker" and obj ~= PF then
                                     obj.Visible = false
@@ -3226,6 +3234,10 @@ function KraviX:CreateWindow(config)
 
                     UserInputService.InputBegan:Connect(function(inp)
                         if inp.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
+                        if _justOpenedPicker then
+                            _justOpenedPicker = false
+                            return
+                        end
                         if not pickerOpen or cDrag or hDrag then return end
                         local mp = UserInputService:GetMouseLocation()
                         local fp = PF.AbsolutePosition; local fs = PF.AbsoluteSize
