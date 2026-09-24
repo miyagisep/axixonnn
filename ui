@@ -1,4 +1,4 @@
--- 4
+-- 4.1
 local KraviX = {}
 
 local TweenService     = game:GetService("TweenService")
@@ -981,30 +981,30 @@ function KraviX:CreateWindow(config)
         Mini.Name = "KxMiniUI"
         Mini.Size = UDim2.new(0,mW,0,mH)
         Mini.Position = defPos
-        Mini.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        Mini.BackgroundColor3 = Color3.fromRGB(14, 13, 18)
         Mini.BorderSizePixel = 0; Mini.Visible = false; Mini.ZIndex = topMiniZIndex
         Mini.ClipsDescendants = true
-        mkCorner(Mini, 14)
-        local miniStroke = mkStroke(Mini, Color3.fromRGB(55, 25, 85), 1, 0)
+        mkCorner(Mini, 8)
+        local miniStroke = mkStroke(Mini, Color3.fromRGB(36, 32, 48), 1, 0)
 
         local MTop = Instance.new("Frame", Mini)
         MTop.Size = UDim2.new(1,0,0,30)
-        MTop.BackgroundColor3 = Color3.fromRGB(24, 12, 40)
+        MTop.BackgroundColor3 = Color3.fromRGB(20, 18, 26)
         MTop.BorderSizePixel = 0; MTop.ZIndex = topMiniZIndex + 1
         MTop:SetAttribute("RelZIndex", 1)
 
         local MTopGlow = Instance.new("Frame", MTop)
-        MTopGlow.Size = UDim2.new(1,0,0,2)
+        MTopGlow.Size = UDim2.new(1,0,0,1)
         MTopGlow.Position = UDim2.new(0,0,0,0)
-        MTopGlow.BackgroundColor3 = C.Accent
+        MTopGlow.BackgroundColor3 = Color3.fromRGB(124, 58, 237)
         MTopGlow.BorderSizePixel = 0; MTopGlow.ZIndex = topMiniZIndex + 2
         MTopGlow:SetAttribute("RelZIndex", 2)
-        mkCorner(MTopGlow, 2)
+        mkCorner(MTopGlow, 1)
 
         local MTitle = Instance.new("TextLabel", MTop)
         MTitle.Size = UDim2.new(1,-36,1,-2); MTitle.Position = UDim2.new(0,12,0,2)
         MTitle.BackgroundTransparency = 1; MTitle.Text = mTitle
-        MTitle.TextColor3 = Color3.fromRGB(245,245,255); MTitle.TextSize = 12
+        MTitle.TextColor3 = Color3.fromRGB(240,240,248); MTitle.TextSize = 12
         MTitle.Font = Enum.Font.GothamBold; MTitle.TextXAlignment = Enum.TextXAlignment.Left
         MTitle.ZIndex = topMiniZIndex + 2
         MTitle:SetAttribute("RelZIndex", 2)
@@ -1012,16 +1012,16 @@ function KraviX:CreateWindow(config)
         local MClose = Instance.new("TextButton", MTop)
         MClose.Size = UDim2.new(0,20,0,20); MClose.AnchorPoint = Vector2.new(1,0.5)
         MClose.Position = UDim2.new(1,-8,0.5,1)
-        MClose.BackgroundColor3 = Color3.fromRGB(36, 18, 54)
-        MClose.Text = "×"; MClose.TextColor3 = Color3.fromRGB(220, 200, 240)
+        MClose.BackgroundColor3 = Color3.fromRGB(26, 23, 34)
+        MClose.Text = "×"; MClose.TextColor3 = Color3.fromRGB(200, 195, 215)
         MClose.TextSize = 14; MClose.Font = Enum.Font.GothamBold
         MClose.AutoButtonColor = false; MClose.ZIndex = topMiniZIndex + 3
         MClose:SetAttribute("RelZIndex", 3)
-        mkCorner(MClose, 8)
-        mkStroke(MClose, Color3.fromRGB(60, 30, 90), 1, 0)
+        mkCorner(MClose, 6)
+        mkStroke(MClose, Color3.fromRGB(42, 38, 54), 1, 0)
 
         MClose.MouseEnter:Connect(function() Tween(MClose,{BackgroundColor3=C.Red,TextColor3=C.White},0.1):Play() end)
-        MClose.MouseLeave:Connect(function() Tween(MClose,{BackgroundColor3=Color3.fromRGB(36, 18, 54),TextColor3=Color3.fromRGB(220,200,240)},0.1):Play() end)
+        MClose.MouseLeave:Connect(function() Tween(MClose,{BackgroundColor3=Color3.fromRGB(26, 23, 34),TextColor3=Color3.fromRGB(200,195,215)},0.1):Play() end)
 
         local MBody = Instance.new("Frame", Mini)
         MBody.Size = UDim2.new(1,0,1,-30); MBody.Position = UDim2.new(0,0,0,30)
@@ -1251,7 +1251,7 @@ function KraviX:CreateWindow(config)
     SearchBox.Size = UDim2.new(1, -16, 1, 0)
     SearchBox.Position = UDim2.new(0, 10, 0, 0)
     SearchBox.BackgroundTransparency = 1
-    SearchBox.PlaceholderText = "Search player..."
+    SearchBox.PlaceholderText = "Search player by name..."
     SearchBox.PlaceholderColor3 = Color3.fromRGB(120, 115, 135)
     SearchBox.Text = ""
     SearchBox.TextColor3 = Color3.fromRGB(240, 240, 245)
@@ -1262,7 +1262,7 @@ function KraviX:CreateWindow(config)
     SearchBox.ZIndex = MiniPlayers.Frame.ZIndex + 3
     SearchBox:SetAttribute("RelZIndex", 3)
 
-    -- Table Column Headers (Name & Status)
+    -- Table Column Headers (NAME & STATUS)
     local HeaderRow = Instance.new("Frame", LeftCol)
     HeaderRow.Size = UDim2.new(1, 0, 0, 20)
     HeaderRow.Position = UDim2.new(0, 0, 0, 64)
@@ -1274,10 +1274,10 @@ function KraviX:CreateWindow(config)
     NameColText.Size = UDim2.new(0.65, 0, 1, 0)
     NameColText.Position = UDim2.new(0, 10, 0, 0)
     NameColText.BackgroundTransparency = 1
-    NameColText.Text = "Name"
+    NameColText.Text = "NAME"
     NameColText.TextColor3 = Color3.fromRGB(130, 125, 145)
-    NameColText.TextSize = 11
-    NameColText.Font = Enum.Font.GothamMedium
+    NameColText.TextSize = 10
+    NameColText.Font = Enum.Font.GothamBold
     NameColText.TextXAlignment = Enum.TextXAlignment.Left
     NameColText.ZIndex = MiniPlayers.Frame.ZIndex + 2
     NameColText:SetAttribute("RelZIndex", 2)
@@ -1286,10 +1286,10 @@ function KraviX:CreateWindow(config)
     StatusColText.Size = UDim2.new(0.35, -10, 1, 0)
     StatusColText.Position = UDim2.new(0.65, 0, 0, 0)
     StatusColText.BackgroundTransparency = 1
-    StatusColText.Text = "Status"
+    StatusColText.Text = "STATUS"
     StatusColText.TextColor3 = Color3.fromRGB(130, 125, 145)
-    StatusColText.TextSize = 11
-    StatusColText.Font = Enum.Font.GothamMedium
+    StatusColText.TextSize = 10
+    StatusColText.Font = Enum.Font.GothamBold
     StatusColText.TextXAlignment = Enum.TextXAlignment.Right
     StatusColText.ZIndex = MiniPlayers.Frame.ZIndex + 2
     StatusColText:SetAttribute("RelZIndex", 2)
@@ -1335,28 +1335,31 @@ function KraviX:CreateWindow(config)
     SelTitle.ZIndex = MiniPlayers.Frame.ZIndex + 2
     SelTitle:SetAttribute("RelZIndex", 2)
 
-    -- Avatar & Details Container
-    local AvatarCont = Instance.new("Frame", RightCol)
-    AvatarCont.Size = UDim2.new(1, 0, 0, 120)
-    AvatarCont.Position = UDim2.new(0, 0, 0, 35)
-    AvatarCont.BackgroundTransparency = 1
-    AvatarCont.ZIndex = MiniPlayers.Frame.ZIndex + 2
-    AvatarCont:SetAttribute("RelZIndex", 2)
+    -- Profile Card Container (Preenche o espaço vertical de forma limpa)
+    local ProfileCard = Instance.new("Frame", RightCol)
+    ProfileCard.Size = UDim2.new(1, 0, 0, 142)
+    ProfileCard.Position = UDim2.new(0, 0, 0, 26)
+    ProfileCard.BackgroundColor3 = Color3.fromRGB(22, 20, 28)
+    ProfileCard.ZIndex = MiniPlayers.Frame.ZIndex + 2
+    ProfileCard:SetAttribute("RelZIndex", 2)
+    mkCorner(ProfileCard, 8)
+    local profStroke = mkStroke(ProfileCard, Color3.fromRGB(38, 35, 48), 1, 0)
+    profStroke:SetAttribute("RelZIndex", 2)
 
-    local AvatarImg = Instance.new("ImageLabel", AvatarCont)
-    AvatarImg.Size = UDim2.new(0, 64, 0, 64)
-    AvatarImg.Position = UDim2.new(0.5, -32, 0, 0)
-    AvatarImg.BackgroundColor3 = Color3.fromRGB(22, 20, 28)
+    local AvatarImg = Instance.new("ImageLabel", ProfileCard)
+    AvatarImg.Size = UDim2.new(0, 60, 0, 60)
+    AvatarImg.Position = UDim2.new(0.5, -30, 0, 10)
+    AvatarImg.BackgroundColor3 = Color3.fromRGB(16, 14, 22)
     AvatarImg.Image = "rbxthumb://type=AvatarHeadShot&id=1&w=150&h=150"
     AvatarImg.ZIndex = MiniPlayers.Frame.ZIndex + 3
     AvatarImg:SetAttribute("RelZIndex", 3)
-    mkCorner(AvatarImg, 32)
+    mkCorner(AvatarImg, 30)
     local avStroke = mkStroke(AvatarImg, Color3.fromRGB(45, 40, 58), 1, 0)
     avStroke:SetAttribute("RelZIndex", 3)
 
-    local SelNameLabel = Instance.new("TextLabel", AvatarCont)
-    SelNameLabel.Size = UDim2.new(1, 0, 0, 18)
-    SelNameLabel.Position = UDim2.new(0, 0, 0, 72)
+    local SelNameLabel = Instance.new("TextLabel", ProfileCard)
+    SelNameLabel.Size = UDim2.new(1, -16, 0, 18)
+    SelNameLabel.Position = UDim2.new(0, 8, 0, 76)
     SelNameLabel.BackgroundTransparency = 1
     SelNameLabel.Text = "Ninguém Selecionado"
     SelNameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -1366,9 +1369,9 @@ function KraviX:CreateWindow(config)
     SelNameLabel.ZIndex = MiniPlayers.Frame.ZIndex + 3
     SelNameLabel:SetAttribute("RelZIndex", 3)
 
-    local SelIdLabel = Instance.new("TextLabel", AvatarCont)
-    SelIdLabel.Size = UDim2.new(1, 0, 0, 14)
-    SelIdLabel.Position = UDim2.new(0, 0, 0, 92)
+    local SelIdLabel = Instance.new("TextLabel", ProfileCard)
+    SelIdLabel.Size = UDim2.new(1, -16, 0, 14)
+    SelIdLabel.Position = UDim2.new(0, 8, 0, 95)
     SelIdLabel.BackgroundTransparency = 1
     SelIdLabel.Text = "ID: 0"
     SelIdLabel.TextColor3 = Color3.fromRGB(130, 125, 145)
@@ -1378,10 +1381,28 @@ function KraviX:CreateWindow(config)
     SelIdLabel.ZIndex = MiniPlayers.Frame.ZIndex + 3
     SelIdLabel:SetAttribute("RelZIndex", 3)
 
+    local StatusBadge = Instance.new("Frame", ProfileCard)
+    StatusBadge.Size = UDim2.new(0, 100, 0, 18)
+    StatusBadge.Position = UDim2.new(0.5, -50, 0, 115)
+    StatusBadge.BackgroundColor3 = Color3.fromRGB(32, 28, 44)
+    StatusBadge.ZIndex = MiniPlayers.Frame.ZIndex + 3
+    StatusBadge:SetAttribute("RelZIndex", 3)
+    mkCorner(StatusBadge, 4)
+
+    local StatusBadgeText = Instance.new("TextLabel", StatusBadge)
+    StatusBadgeText.Size = UDim2.new(1, 0, 1, 0)
+    StatusBadgeText.BackgroundTransparency = 1
+    StatusBadgeText.Text = "USER"
+    StatusBadgeText.TextColor3 = Color3.fromRGB(168, 115, 255)
+    StatusBadgeText.TextSize = 9
+    StatusBadgeText.Font = Enum.Font.GothamBold
+    StatusBadgeText.ZIndex = MiniPlayers.Frame.ZIndex + 4
+    StatusBadgeText:SetAttribute("RelZIndex", 4)
+
     -- Container de Ações (APENAS 2 BOTÕES: VIEW & WHITELIST)
     local ActionsCont = Instance.new("Frame", RightCol)
-    ActionsCont.Size = UDim2.new(1, 0, 0, 42)
-    ActionsCont.Position = UDim2.new(0, 0, 0, 175)
+    ActionsCont.Size = UDim2.new(1, 0, 0, 40)
+    ActionsCont.Position = UDim2.new(0, 0, 0, 180)
     ActionsCont.BackgroundTransparency = 1
     ActionsCont.ZIndex = MiniPlayers.Frame.ZIndex + 2
     ActionsCont:SetAttribute("RelZIndex", 2)
@@ -1431,6 +1452,20 @@ function KraviX:CreateWindow(config)
 
         local isView = (_G.KraviX_ViewingPlayer == selectedPlayer)
         local isWL   = isWhitelisted(selectedPlayer)
+
+        if isWL then
+            StatusBadgeText.Text = "WHITELISTED"
+            StatusBadgeText.TextColor3 = Color3.fromRGB(168, 115, 255)
+            StatusBadge.BackgroundColor3 = Color3.fromRGB(42, 28, 60)
+        elseif selectedPlayer == LocalPlayer then
+            StatusBadgeText.Text = "CLIENT"
+            StatusBadgeText.TextColor3 = Color3.fromRGB(120, 200, 255)
+            StatusBadge.BackgroundColor3 = Color3.fromRGB(22, 36, 52)
+        else
+            StatusBadgeText.Text = "USER"
+            StatusBadgeText.TextColor3 = Color3.fromRGB(160, 155, 175)
+            StatusBadge.BackgroundColor3 = Color3.fromRGB(28, 26, 38)
+        end
 
         -- View Button State
         if isView then
@@ -1488,7 +1523,7 @@ function KraviX:CreateWindow(config)
                 local cSt = mkStroke(Card, isSel and Color3.fromRGB(124, 58, 237) or Color3.fromRGB(32, 29, 42), 1, 0)
                 cSt:SetAttribute("RelZIndex", 2)
 
-                -- Left indicator vertical line
+                -- Left indicator vertical line (3px bar)
                 local IndBar = Instance.new("Frame", Card)
                 IndBar.Size = UDim2.new(0, 3, 1, 0)
                 IndBar.Position = UDim2.new(0, 0, 0, 0)
@@ -1530,6 +1565,17 @@ function KraviX:CreateWindow(config)
                 CardBtn.Text = ""
                 CardBtn.ZIndex = MiniPlayers.Frame.ZIndex + 4
                 CardBtn:SetAttribute("RelZIndex", 4)
+
+                CardBtn.MouseEnter:Connect(function()
+                    if not (selectedPlayer == plr) then
+                        Tween(Card, {BackgroundColor3 = Color3.fromRGB(24, 20, 32)}, 0.12):Play()
+                    end
+                end)
+                CardBtn.MouseLeave:Connect(function()
+                    if not (selectedPlayer == plr) then
+                        Tween(Card, {BackgroundColor3 = Color3.fromRGB(18, 16, 24)}, 0.12):Play()
+                    end
+                end)
 
                 CardBtn.MouseButton1Click:Connect(function()
                     selectedPlayer = plr
