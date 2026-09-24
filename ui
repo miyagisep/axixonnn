@@ -1,4 +1,4 @@
--- 4.1
+-- 4
 local KraviX = {}
 
 local TweenService     = game:GetService("TweenService")
@@ -1397,7 +1397,6 @@ function KraviX:CreateWindow(config)
                     end)
                 end
             end
-        end
         StatsLabel.Text = "Server Players: " .. (#allPlayers - 1) .. "  |  Whitelisted: " .. wlCount
         updateCanvas()
     end
