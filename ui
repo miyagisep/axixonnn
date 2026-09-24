@@ -1,4 +1,4 @@
--- 4.1
+-- 4
 local KraviX = {}
 
 local TweenService     = game:GetService("TweenService")
@@ -981,15 +981,15 @@ function KraviX:CreateWindow(config)
         Mini.Name = "KxMiniUI"
         Mini.Size = UDim2.new(0,mW,0,mH)
         Mini.Position = defPos
-        Mini.BackgroundColor3 = Color3.fromRGB(11, 10, 15)
+        Mini.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
         Mini.BorderSizePixel = 0; Mini.Visible = false; Mini.ZIndex = topMiniZIndex
         Mini.ClipsDescendants = true
         mkCorner(Mini, 8)
-        local miniStroke = mkStroke(Mini, Color3.fromRGB(35, 31, 51), 1, 0)
+        local miniStroke = mkStroke(Mini, Color3.fromRGB(32, 26, 46), 1, 0)
 
         local MTop = Instance.new("Frame", Mini)
         MTop.Size = UDim2.new(1,0,0,30)
-        MTop.BackgroundColor3 = Color3.fromRGB(16, 14, 22)
+        MTop.BackgroundColor3 = Color3.fromRGB(10, 8, 16)
         MTop.BorderSizePixel = 0; MTop.ZIndex = topMiniZIndex + 1
         MTop:SetAttribute("RelZIndex", 1)
 
@@ -1240,11 +1240,11 @@ function KraviX:CreateWindow(config)
     local SearchCont = Instance.new("Frame", LeftCol)
     SearchCont.Size = UDim2.new(1, 0, 0, 32)
     SearchCont.Position = UDim2.new(0, 0, 0, 26)
-    SearchCont.BackgroundColor3 = Color3.fromRGB(22, 20, 32)
+    SearchCont.BackgroundColor3 = Color3.fromRGB(14, 14, 20)
     SearchCont.ZIndex = MiniPlayers.Frame.ZIndex + 2
     SearchCont:SetAttribute("RelZIndex", 2)
     mkCorner(SearchCont, 6)
-    local searchSt = mkStroke(SearchCont, Color3.fromRGB(35, 31, 51), 1, 0)
+    local searchSt = mkStroke(SearchCont, Color3.fromRGB(30, 26, 44), 1, 0)
     searchSt:SetAttribute("RelZIndex", 2)
 
     local SearchBox = Instance.new("TextBox", SearchCont)
@@ -1339,22 +1339,22 @@ function KraviX:CreateWindow(config)
     local ProfileCard = Instance.new("Frame", RightCol)
     ProfileCard.Size = UDim2.new(1, 0, 0, 142)
     ProfileCard.Position = UDim2.new(0, 0, 0, 26)
-    ProfileCard.BackgroundColor3 = Color3.fromRGB(22, 20, 32)
+    ProfileCard.BackgroundColor3 = Color3.fromRGB(8, 8, 12)
     ProfileCard.ZIndex = MiniPlayers.Frame.ZIndex + 2
     ProfileCard:SetAttribute("RelZIndex", 2)
     mkCorner(ProfileCard, 8)
-    local profStroke = mkStroke(ProfileCard, Color3.fromRGB(35, 31, 51), 1, 0)
+    local profStroke = mkStroke(ProfileCard, Color3.fromRGB(30, 26, 44), 1, 0)
     profStroke:SetAttribute("RelZIndex", 2)
 
     local AvatarImg = Instance.new("ImageLabel", ProfileCard)
     AvatarImg.Size = UDim2.new(0, 60, 0, 60)
     AvatarImg.Position = UDim2.new(0.5, -30, 0, 10)
-    AvatarImg.BackgroundColor3 = Color3.fromRGB(16, 14, 22)
+    AvatarImg.BackgroundColor3 = Color3.fromRGB(14, 14, 20)
     AvatarImg.Image = "rbxthumb://type=AvatarHeadShot&id=1&w=150&h=150"
     AvatarImg.ZIndex = MiniPlayers.Frame.ZIndex + 3
     AvatarImg:SetAttribute("RelZIndex", 3)
     mkCorner(AvatarImg, 30)
-    local avStroke = mkStroke(AvatarImg, Color3.fromRGB(45, 40, 62), 1, 0)
+    local avStroke = mkStroke(AvatarImg, Color3.fromRGB(38, 32, 54), 1, 0)
     avStroke:SetAttribute("RelZIndex", 3)
 
     local SelNameLabel = Instance.new("TextLabel", ProfileCard)
@@ -1515,19 +1515,19 @@ function KraviX:CreateWindow(config)
 
                 local Card = Instance.new("Frame", PlayerScroll)
                 Card.Size = UDim2.new(1, 0, 0, 36)
-                Card.BackgroundColor3 = isSel and Color3.fromRGB(34, 28, 52) or Color3.fromRGB(18, 16, 26)
+                Card.BackgroundColor3 = isSel and Color3.fromRGB(26, 20, 42) or Color3.fromRGB(10, 10, 14)
                 Card.BorderSizePixel = 0
                 Card.ZIndex = MiniPlayers.Frame.ZIndex + 2
                 Card:SetAttribute("RelZIndex", 2)
                 mkCorner(Card, 6)
-                local cSt = mkStroke(Card, isSel and Color3.fromRGB(139, 92, 246) or Color3.fromRGB(35, 31, 51), 1, 0)
+                local cSt = mkStroke(Card, isSel and Color3.fromRGB(139, 92, 246) or Color3.fromRGB(30, 26, 44), 1, 0)
                 cSt:SetAttribute("RelZIndex", 2)
 
                 -- Left indicator vertical line (3px bar Violet)
                 local IndBar = Instance.new("Frame", Card)
                 IndBar.Size = UDim2.new(0, 3, 1, 0)
                 IndBar.Position = UDim2.new(0, 0, 0, 0)
-                IndBar.BackgroundColor3 = (isSel or isWL or isView) and Color3.fromRGB(139, 92, 246) or Color3.fromRGB(42, 38, 58)
+                IndBar.BackgroundColor3 = (isSel or isWL or isView) and Color3.fromRGB(139, 92, 246) or Color3.fromRGB(38, 32, 54)
                 IndBar.BorderSizePixel = 0
                 IndBar.ZIndex = MiniPlayers.Frame.ZIndex + 3
                 IndBar:SetAttribute("RelZIndex", 3)
@@ -1695,11 +1695,11 @@ function KraviX:CreateWindow(config)
     local HeaderBanner = Instance.new("Frame", MiniConfigs.Body)
     HeaderBanner.Size = UDim2.new(1, 0, 0, 42)
     HeaderBanner.Position = UDim2.new(0, 0, 0, 0)
-    HeaderBanner.BackgroundColor3 = Color3.fromRGB(16, 14, 24)
+    HeaderBanner.BackgroundColor3 = Color3.fromRGB(8, 8, 12)
     HeaderBanner.ZIndex = MiniConfigs.Frame.ZIndex + 2
     HeaderBanner:SetAttribute("RelZIndex", 2)
     mkCorner(HeaderBanner, 8)
-    local hbSt = mkStroke(HeaderBanner, Color3.fromRGB(32, 28, 46), 1, 0)
+    local hbSt = mkStroke(HeaderBanner, Color3.fromRGB(30, 26, 44), 1, 0)
     hbSt:SetAttribute("RelZIndex", 2)
 
     local hbBar = Instance.new("Frame", HeaderBanner)
@@ -1738,11 +1738,11 @@ function KraviX:CreateWindow(config)
     local Card1 = Instance.new("Frame", MiniConfigs.Body)
     Card1.Size = UDim2.new(1, 0, 0, 115)
     Card1.Position = UDim2.new(0, 0, 0, 50)
-    Card1.BackgroundColor3 = Color3.fromRGB(16, 14, 24)
+    Card1.BackgroundColor3 = Color3.fromRGB(8, 8, 12)
     Card1.ZIndex = MiniConfigs.Frame.ZIndex + 2
     Card1:SetAttribute("RelZIndex", 2)
     mkCorner(Card1, 8)
-    local c1St = mkStroke(Card1, Color3.fromRGB(32, 28, 46), 1, 0)
+    local c1St = mkStroke(Card1, Color3.fromRGB(30, 26, 44), 1, 0)
     c1St:SetAttribute("RelZIndex", 2)
 
     -- Row 1 inside Card1: Input
@@ -1761,11 +1761,11 @@ function KraviX:CreateWindow(config)
     local CfgInputCont = Instance.new("Frame", Card1)
     CfgInputCont.Size = UDim2.new(1, -20, 0, 32)
     CfgInputCont.Position = UDim2.new(0, 10, 0, 24)
-    CfgInputCont.BackgroundColor3 = Color3.fromRGB(22, 20, 34)
+    CfgInputCont.BackgroundColor3 = Color3.fromRGB(14, 14, 20)
     CfgInputCont.ZIndex = MiniConfigs.Frame.ZIndex + 3
     CfgInputCont:SetAttribute("RelZIndex", 3)
     mkCorner(CfgInputCont, 6)
-    local cfgInSt = mkStroke(CfgInputCont, Color3.fromRGB(38, 33, 56), 1, 0)
+    local cfgInSt = mkStroke(CfgInputCont, Color3.fromRGB(34, 30, 52), 1, 0)
     cfgInSt:SetAttribute("RelZIndex", 3)
 
     local cfgBox = Instance.new("TextBox", CfgInputCont)
@@ -1787,7 +1787,7 @@ function KraviX:CreateWindow(config)
         Tween(cfgInSt, {Color = Color3.fromRGB(139, 92, 246)}, 0.15):Play()
     end)
     cfgBox.FocusLost:Connect(function()
-        Tween(cfgInSt, {Color = Color3.fromRGB(38, 33, 56)}, 0.15):Play()
+        Tween(cfgInSt, {Color = Color3.fromRGB(34, 30, 52)}, 0.15):Play()
     end)
 
     -- Row 2 inside Card1: Select Config Button
@@ -1808,7 +1808,7 @@ function KraviX:CreateWindow(config)
     local ConfigSelectBtn = Instance.new("TextButton", Card1)
     ConfigSelectBtn.Size = UDim2.new(1, -20, 0, 32)
     ConfigSelectBtn.Position = UDim2.new(0, 10, 0, 78)
-    ConfigSelectBtn.BackgroundColor3 = Color3.fromRGB(22, 20, 34)
+    ConfigSelectBtn.BackgroundColor3 = Color3.fromRGB(14, 14, 20)
     ConfigSelectBtn.Text = "  Config: default"
     ConfigSelectBtn.TextColor3 = Color3.fromRGB(245, 245, 250)
     ConfigSelectBtn.TextSize = 11
@@ -1818,7 +1818,7 @@ function KraviX:CreateWindow(config)
     ConfigSelectBtn.ZIndex = MiniConfigs.Frame.ZIndex + 3
     ConfigSelectBtn:SetAttribute("RelZIndex", 3)
     mkCorner(ConfigSelectBtn, 6)
-    local cfgSelSt = mkStroke(ConfigSelectBtn, Color3.fromRGB(38, 33, 56), 1, 0)
+    local cfgSelSt = mkStroke(ConfigSelectBtn, Color3.fromRGB(34, 30, 52), 1, 0)
     cfgSelSt:SetAttribute("RelZIndex", 3)
 
     local CfgDropArrow = Instance.new("TextLabel", ConfigSelectBtn)
@@ -1834,23 +1834,23 @@ function KraviX:CreateWindow(config)
     CfgDropArrow:SetAttribute("RelZIndex", 4)
 
     ConfigSelectBtn.MouseEnter:Connect(function()
-        Tween(ConfigSelectBtn, {BackgroundColor3 = Color3.fromRGB(28, 25, 42)}, 0.12):Play()
+        Tween(ConfigSelectBtn, {BackgroundColor3 = Color3.fromRGB(22, 18, 34)}, 0.12):Play()
         Tween(cfgSelSt, {Color = Color3.fromRGB(139, 92, 246)}, 0.12):Play()
     end)
     ConfigSelectBtn.MouseLeave:Connect(function()
-        Tween(ConfigSelectBtn, {BackgroundColor3 = Color3.fromRGB(22, 20, 34)}, 0.12):Play()
-        Tween(cfgSelSt, {Color = Color3.fromRGB(38, 33, 56)}, 0.12):Play()
+        Tween(ConfigSelectBtn, {BackgroundColor3 = Color3.fromRGB(14, 14, 20)}, 0.12):Play()
+        Tween(cfgSelSt, {Color = Color3.fromRGB(34, 30, 52)}, 0.12):Play()
     end)
 
     -- Card 2: Action Grid Card (2x2 Buttons)
     local Card2 = Instance.new("Frame", MiniConfigs.Body)
     Card2.Size = UDim2.new(1, 0, 0, 94)
     Card2.Position = UDim2.new(0, 0, 0, 173)
-    Card2.BackgroundColor3 = Color3.fromRGB(16, 14, 24)
+    Card2.BackgroundColor3 = Color3.fromRGB(8, 8, 12)
     Card2.ZIndex = MiniConfigs.Frame.ZIndex + 2
     Card2:SetAttribute("RelZIndex", 2)
     mkCorner(Card2, 8)
-    local c2St = mkStroke(Card2, Color3.fromRGB(32, 28, 46), 1, 0)
+    local c2St = mkStroke(Card2, Color3.fromRGB(30, 26, 44), 1, 0)
     c2St:SetAttribute("RelZIndex", 2)
 
     -- Row 1: Save & Load
@@ -1951,11 +1951,11 @@ function KraviX:CreateWindow(config)
     local AutoLoadFrame = Instance.new("Frame", MiniConfigs.Body)
     AutoLoadFrame.Size = UDim2.new(1, 0, 0, 52)
     AutoLoadFrame.Position = UDim2.new(0, 0, 0, 275)
-    AutoLoadFrame.BackgroundColor3 = Color3.fromRGB(16, 14, 24)
+    AutoLoadFrame.BackgroundColor3 = Color3.fromRGB(8, 8, 12)
     AutoLoadFrame.ZIndex = MiniConfigs.Frame.ZIndex + 2
     AutoLoadFrame:SetAttribute("RelZIndex", 2)
     mkCorner(AutoLoadFrame, 8)
-    local autoSt = mkStroke(AutoLoadFrame, Color3.fromRGB(32, 28, 46), 1, 0)
+    local autoSt = mkStroke(AutoLoadFrame, Color3.fromRGB(30, 26, 44), 1, 0)
     autoSt:SetAttribute("RelZIndex", 2)
 
     local AutoTitle = Instance.new("TextLabel", AutoLoadFrame)
