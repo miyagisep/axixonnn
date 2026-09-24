@@ -1,4 +1,4 @@
--- 4.1
+-- 4
 local KraviX = {}
 
 local TweenService     = game:GetService("TweenService")
@@ -1410,31 +1410,31 @@ function KraviX:CreateWindow(config)
     local ViewBtn = Instance.new("TextButton", ActionsCont)
     ViewBtn.Size = UDim2.new(0.48, 0, 0, 36)
     ViewBtn.Position = UDim2.new(0, 0, 0, 0)
-    ViewBtn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    ViewBtn.BackgroundColor3 = Color3.fromRGB(139, 92, 246)
     ViewBtn.Text = "View"
-    ViewBtn.TextColor3 = Color3.fromRGB(245, 245, 250)
+    ViewBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
     ViewBtn.TextSize = 11
     ViewBtn.Font = Enum.Font.GothamBold
     ViewBtn.AutoButtonColor = false
     ViewBtn.ZIndex = MiniPlayers.Frame.ZIndex + 3
     ViewBtn:SetAttribute("RelZIndex", 3)
     mkCorner(ViewBtn, 6)
-    local vSt = mkStroke(ViewBtn, Color3.fromRGB(35, 30, 52), 1, 0)
+    local vSt = mkStroke(ViewBtn, Color3.fromRGB(175, 130, 255), 1, 0)
     vSt:SetAttribute("RelZIndex", 3)
 
     local WlBtn = Instance.new("TextButton", ActionsCont)
     WlBtn.Size = UDim2.new(0.48, 0, 0, 36)
     WlBtn.Position = UDim2.new(0.52, 0, 0, 0)
-    WlBtn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    WlBtn.BackgroundColor3 = Color3.fromRGB(139, 92, 246)
     WlBtn.Text = "Whitelist"
-    WlBtn.TextColor3 = Color3.fromRGB(245, 245, 250)
+    WlBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
     WlBtn.TextSize = 11
     WlBtn.Font = Enum.Font.GothamBold
     WlBtn.AutoButtonColor = false
     WlBtn.ZIndex = MiniPlayers.Frame.ZIndex + 3
     WlBtn:SetAttribute("RelZIndex", 3)
     mkCorner(WlBtn, 6)
-    local wSt = mkStroke(WlBtn, Color3.fromRGB(35, 30, 52), 1, 0)
+    local wSt = mkStroke(WlBtn, Color3.fromRGB(175, 130, 255), 1, 0)
     wSt:SetAttribute("RelZIndex", 3)
 
     local function isWhitelisted(plr)
@@ -1467,26 +1467,26 @@ function KraviX:CreateWindow(config)
             StatusBadge.BackgroundColor3 = Color3.fromRGB(28, 25, 40)
         end
 
-        -- View Button State
+        -- View Button State (Fundo Roxo de Destaque)
         if isView then
-            ViewBtn.BackgroundColor3 = Color3.fromRGB(139, 92, 246)
+            ViewBtn.BackgroundColor3 = Color3.fromRGB(168, 125, 255)
             ViewBtn.Text = "Viewing"
-            vSt.Color = Color3.fromRGB(168, 125, 255)
+            vSt.Color = Color3.fromRGB(200, 160, 255)
         else
-            ViewBtn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+            ViewBtn.BackgroundColor3 = Color3.fromRGB(139, 92, 246)
             ViewBtn.Text = "View"
-            vSt.Color = Color3.fromRGB(35, 30, 52)
+            vSt.Color = Color3.fromRGB(175, 130, 255)
         end
 
-        -- Whitelist Button State
+        -- Whitelist Button State (Fundo Roxo de Destaque)
         if isWL then
-            WlBtn.BackgroundColor3 = Color3.fromRGB(139, 92, 246)
+            WlBtn.BackgroundColor3 = Color3.fromRGB(168, 125, 255)
             WlBtn.Text = "Whitelisted"
-            wSt.Color = Color3.fromRGB(168, 125, 255)
+            wSt.Color = Color3.fromRGB(200, 160, 255)
         else
-            WlBtn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+            WlBtn.BackgroundColor3 = Color3.fromRGB(139, 92, 246)
             WlBtn.Text = "Whitelist"
-            wSt.Color = Color3.fromRGB(35, 30, 52)
+            wSt.Color = Color3.fromRGB(175, 130, 255)
         end
     end
 
@@ -1515,19 +1515,19 @@ function KraviX:CreateWindow(config)
 
                 local Card = Instance.new("Frame", PlayerScroll)
                 Card.Size = UDim2.new(1, 0, 0, 36)
-                Card.BackgroundColor3 = isSel and Color3.fromRGB(28, 20, 48) or Color3.fromRGB(0, 0, 0)
+                Card.BackgroundColor3 = isSel and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(0, 0, 0)
                 Card.BorderSizePixel = 0
                 Card.ZIndex = MiniPlayers.Frame.ZIndex + 2
                 Card:SetAttribute("RelZIndex", 2)
                 mkCorner(Card, 6)
-                local cSt = mkStroke(Card, isSel and Color3.fromRGB(139, 92, 246) or Color3.fromRGB(35, 30, 52), 1, 0)
+                local cSt = mkStroke(Card, isSel and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(35, 30, 52), 1, 0)
                 cSt:SetAttribute("RelZIndex", 2)
 
-                -- Left indicator vertical line (3px bar Violet)
+                -- Left indicator vertical line
                 local IndBar = Instance.new("Frame", Card)
                 IndBar.Size = UDim2.new(0, 3, 1, 0)
                 IndBar.Position = UDim2.new(0, 0, 0, 0)
-                IndBar.BackgroundColor3 = (isSel or isWL or isView) and Color3.fromRGB(139, 92, 246) or Color3.fromRGB(35, 30, 52)
+                IndBar.BackgroundColor3 = isSel and Color3.fromRGB(139, 92, 246) or ((isWL or isView) and Color3.fromRGB(139, 92, 246) or Color3.fromRGB(35, 30, 52))
                 IndBar.BorderSizePixel = 0
                 IndBar.ZIndex = MiniPlayers.Frame.ZIndex + 3
                 IndBar:SetAttribute("RelZIndex", 3)
@@ -1538,9 +1538,9 @@ function KraviX:CreateWindow(config)
                 NameLbl.Position = UDim2.new(0, 10, 0, 0)
                 NameLbl.BackgroundTransparency = 1
                 NameLbl.Text = plr.DisplayName or plr.Name
-                NameLbl.TextColor3 = (isSel or isWL) and Color3.fromRGB(168, 125, 255) or Color3.fromRGB(235, 235, 240)
+                NameLbl.TextColor3 = isSel and Color3.fromRGB(15, 15, 20) or ((isWL) and Color3.fromRGB(168, 125, 255) or Color3.fromRGB(235, 235, 240))
                 NameLbl.TextSize = 11
-                NameLbl.Font = Enum.Font.GothamMedium
+                NameLbl.Font = Enum.Font.GothamBold
                 NameLbl.TextXAlignment = Enum.TextXAlignment.Left
                 NameLbl.TextTruncate = Enum.TextTruncate.AtEnd
                 NameLbl.ZIndex = MiniPlayers.Frame.ZIndex + 3
@@ -1552,7 +1552,7 @@ function KraviX:CreateWindow(config)
                 StatusLbl.Position = UDim2.new(0.62, 0, 0, 0)
                 StatusLbl.BackgroundTransparency = 1
                 StatusLbl.Text = statusText
-                StatusLbl.TextColor3 = (isWL or isView) and Color3.fromRGB(168, 125, 255) or Color3.fromRGB(140, 135, 160)
+                StatusLbl.TextColor3 = isSel and Color3.fromRGB(80, 80, 100) or ((isWL or isView) and Color3.fromRGB(168, 125, 255) or Color3.fromRGB(140, 135, 160))
                 StatusLbl.TextSize = 10
                 StatusLbl.Font = Enum.Font.GothamBold
                 StatusLbl.TextXAlignment = Enum.TextXAlignment.Right
