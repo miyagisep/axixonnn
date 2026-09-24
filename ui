@@ -1,4 +1,4 @@
--- 4
+-- 4.1
 local KraviX = {}
 
 local TweenService     = game:GetService("TweenService")
@@ -1515,19 +1515,19 @@ function KraviX:CreateWindow(config)
 
                 local Card = Instance.new("Frame", PlayerScroll)
                 Card.Size = UDim2.new(1, 0, 0, 36)
-                Card.BackgroundColor3 = isSel and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(0, 0, 0)
+                Card.BackgroundColor3 = isSel and Color3.fromRGB(32, 32, 42) or Color3.fromRGB(0, 0, 0)
                 Card.BorderSizePixel = 0
                 Card.ZIndex = MiniPlayers.Frame.ZIndex + 2
                 Card:SetAttribute("RelZIndex", 2)
                 mkCorner(Card, 6)
-                local cSt = mkStroke(Card, isSel and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(35, 30, 52), 1, 0)
+                local cSt = mkStroke(Card, isSel and Color3.fromRGB(240, 240, 250) or Color3.fromRGB(35, 30, 52), 1, 0)
                 cSt:SetAttribute("RelZIndex", 2)
 
                 -- Left indicator vertical line
                 local IndBar = Instance.new("Frame", Card)
                 IndBar.Size = UDim2.new(0, 3, 1, 0)
                 IndBar.Position = UDim2.new(0, 0, 0, 0)
-                IndBar.BackgroundColor3 = isSel and Color3.fromRGB(139, 92, 246) or ((isWL or isView) and Color3.fromRGB(139, 92, 246) or Color3.fromRGB(35, 30, 52))
+                IndBar.BackgroundColor3 = isSel and Color3.fromRGB(255, 255, 255) or ((isWL or isView) and Color3.fromRGB(139, 92, 246) or Color3.fromRGB(35, 30, 52))
                 IndBar.BorderSizePixel = 0
                 IndBar.ZIndex = MiniPlayers.Frame.ZIndex + 3
                 IndBar:SetAttribute("RelZIndex", 3)
@@ -1538,7 +1538,7 @@ function KraviX:CreateWindow(config)
                 NameLbl.Position = UDim2.new(0, 10, 0, 0)
                 NameLbl.BackgroundTransparency = 1
                 NameLbl.Text = plr.DisplayName or plr.Name
-                NameLbl.TextColor3 = isSel and Color3.fromRGB(15, 15, 20) or ((isWL) and Color3.fromRGB(168, 125, 255) or Color3.fromRGB(235, 235, 240))
+                NameLbl.TextColor3 = isSel and Color3.fromRGB(255, 255, 255) or ((isWL) and Color3.fromRGB(168, 125, 255) or Color3.fromRGB(235, 235, 240))
                 NameLbl.TextSize = 11
                 NameLbl.Font = Enum.Font.GothamBold
                 NameLbl.TextXAlignment = Enum.TextXAlignment.Left
@@ -1552,7 +1552,7 @@ function KraviX:CreateWindow(config)
                 StatusLbl.Position = UDim2.new(0.62, 0, 0, 0)
                 StatusLbl.BackgroundTransparency = 1
                 StatusLbl.Text = statusText
-                StatusLbl.TextColor3 = isSel and Color3.fromRGB(80, 80, 100) or ((isWL or isView) and Color3.fromRGB(168, 125, 255) or Color3.fromRGB(140, 135, 160))
+                StatusLbl.TextColor3 = isSel and Color3.fromRGB(200, 200, 215) or ((isWL or isView) and Color3.fromRGB(168, 125, 255) or Color3.fromRGB(140, 135, 160))
                 StatusLbl.TextSize = 10
                 StatusLbl.Font = Enum.Font.GothamBold
                 StatusLbl.TextXAlignment = Enum.TextXAlignment.Right
@@ -1568,12 +1568,14 @@ function KraviX:CreateWindow(config)
 
                 CardBtn.MouseEnter:Connect(function()
                     if not (selectedPlayer == plr) then
-                        Tween(Card, {BackgroundColor3 = Color3.fromRGB(18, 14, 30)}, 0.12):Play()
+                        Tween(Card, {BackgroundColor3 = Color3.fromRGB(22, 22, 28)}, 0.12):Play()
+                        Tween(cSt, {Color = Color3.fromRGB(160, 160, 180)}, 0.12):Play()
                     end
                 end)
                 CardBtn.MouseLeave:Connect(function()
                     if not (selectedPlayer == plr) then
                         Tween(Card, {BackgroundColor3 = Color3.fromRGB(0, 0, 0)}, 0.12):Play()
+                        Tween(cSt, {Color = Color3.fromRGB(35, 30, 52)}, 0.12):Play()
                     end
                 end)
 
