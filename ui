@@ -1,4 +1,4 @@
--- 4.1
+-- 4
 local KraviX = {}
 
 local TweenService     = game:GetService("TweenService")
@@ -1450,43 +1450,48 @@ function KraviX:CreateWindow(config)
         SelNameLabel.Text = selectedPlayer.DisplayName or selectedPlayer.Name
         SelIdLabel.Text = "@" .. selectedPlayer.Name .. "  •  ID: " .. selectedPlayer.UserId
 
+        -- Animação suave de pop/bounce no Avatar Headshot
+        AvatarImg.Size = UDim2.new(0, 52, 0, 52)
+        AvatarImg.Position = UDim2.new(0.5, -26, 0, 14)
+        Tween(AvatarImg, {Size = UDim2.new(0, 60, 0, 60), Position = UDim2.new(0.5, -30, 0, 10)}, 0.22, Enum.EasingStyle.Back, Enum.EasingDirection.Out):Play()
+
         local isView = (_G.KraviX_ViewingPlayer == selectedPlayer)
         local isWL   = isWhitelisted(selectedPlayer)
 
         if isWL then
             StatusBadgeText.Text = "WHITELISTED"
             StatusBadgeText.TextColor3 = Color3.fromRGB(168, 125, 255)
-            StatusBadge.BackgroundColor3 = Color3.fromRGB(42, 28, 62)
+            Tween(StatusBadge, {BackgroundColor3 = Color3.fromRGB(42, 28, 62)}, 0.15):Play()
         elseif selectedPlayer == LocalPlayer then
             StatusBadgeText.Text = "CLIENT"
             StatusBadgeText.TextColor3 = Color3.fromRGB(120, 200, 255)
-            StatusBadge.BackgroundColor3 = Color3.fromRGB(22, 38, 56)
+            Tween(StatusBadge, {BackgroundColor3 = Color3.fromRGB(22, 38, 56)}, 0.15):Play()
         else
             StatusBadgeText.Text = "USER"
             StatusBadgeText.TextColor3 = Color3.fromRGB(160, 155, 175)
-            StatusBadge.BackgroundColor3 = Color3.fromRGB(28, 25, 40)
+            Tween(StatusBadge, {BackgroundColor3 = Color3.fromRGB(28, 25, 40)}, 0.15):Play()
         end
 
-        -- View Button State (Fundo Roxo de Destaque)
+        -- View Button State (Transição Suave de Cor)
         if isView then
-            ViewBtn.BackgroundColor3 = Color3.fromRGB(168, 125, 255)
+            Tween(ViewBtn, {BackgroundColor3 = Color3.fromRGB(168, 125, 255)}, 0.15):Play()
             ViewBtn.Text = "Viewing"
-            vSt.Color = Color3.fromRGB(200, 160, 255)
+            Tween(vSt, {Color = Color3.fromRGB(200, 160, 255)}, 0.15):Play()
         else
-            ViewBtn.BackgroundColor3 = Color3.fromRGB(139, 92, 246)
+            Tween(ViewBtn, {BackgroundColor3 = Color3.fromRGB(139, 92, 246)}, 0.15):Play()
             ViewBtn.Text = "View"
-            vSt.Color = Color3.fromRGB(175, 130, 255)
+            Tween(vSt, {Color = Color3.fromRGB(175, 130, 255)}, 0.15):Play()
         end
 
-        -- Whitelist Button State (Fundo Roxo de Destaque)
+        -- Whitelist Button State (Transição Suave de Cor)
         if isWL then
-            WlBtn.BackgroundColor3 = Color3.fromRGB(168, 125, 255)
+            Tween(WlBtn, {BackgroundColor3 = Color3.fromRGB(168, 125, 255)}, 0.15):Play()
             WlBtn.Text = "Whitelisted"
-            wSt.Color = Color3.fromRGB(200, 160, 255)
+            Tween(wSt, {Color = Color3.fromRGB(200, 160, 255)}, 0.15):Play()
         else
-            WlBtn.BackgroundColor3 = Color3.fromRGB(139, 92, 246)
+            Tween(WlBtn, {BackgroundColor3 = Color3.fromRGB(139, 92, 246)}, 0.15):Play()
             WlBtn.Text = "Whitelist"
-            wSt.Color = Color3.fromRGB(175, 130, 255)
+            Tween(wSt, {Color = Color3.fromRGB(175, 130, 255)}, 0.15):Play()
         end
     end
 
@@ -1525,7 +1530,7 @@ function KraviX:CreateWindow(config)
 
                 -- Left indicator vertical line
                 local IndBar = Instance.new("Frame", Card)
-                IndBar.Size = UDim2.new(0, 3, 1, 0)
+                IndBar.Size = UDim2.new(0, isSel and 4 or 3, 1, 0)
                 IndBar.Position = UDim2.new(0, 0, 0, 0)
                 IndBar.BackgroundColor3 = isSel and Color3.fromRGB(255, 255, 255) or ((isWL or isView) and Color3.fromRGB(139, 92, 246) or Color3.fromRGB(35, 30, 52))
                 IndBar.BorderSizePixel = 0
@@ -1580,9 +1585,22 @@ function KraviX:CreateWindow(config)
                 end)
 
                 CardBtn.MouseButton1Click:Connect(function()
+                    if selectedPlayer == plr then return end
                     selectedPlayer = plr
+
+                    -- Animação ultra-suave ao selecionar o card
+                    Tween(Card, {Size = UDim2.new(0.98, 0, 0, 34)}, 0.06, Enum.EasingStyle.Sine, Enum.EasingDirection.Out):Play()
+                    Tween(Card, {BackgroundColor3 = Color3.fromRGB(34, 34, 46)}, 0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out):Play()
+                    Tween(cSt, {Color = Color3.fromRGB(245, 245, 255)}, 0.16):Play()
+                    Tween(IndBar, {Size = UDim2.new(0, 4, 1, 0), BackgroundColor3 = Color3.fromRGB(255, 255, 255)}, 0.16):Play()
+                    Tween(NameLbl, {TextColor3 = Color3.fromRGB(255, 255, 255)}, 0.16):Play()
+
                     updateSelectedPanel()
-                    refreshPlayerList()
+
+                    task.delay(0.08, function()
+                        Tween(Card, {Size = UDim2.new(1, 0, 0, 36)}, 0.14, Enum.EasingStyle.Back, Enum.EasingDirection.Out):Play()
+                        task.delay(0.1, refreshPlayerList)
+                    end)
                 end)
             end
         end
