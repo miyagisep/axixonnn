@@ -1,4 +1,4 @@
--- 4
+-- 4.1
 local KraviX = {}
 
 local TweenService     = game:GetService("TweenService")
@@ -1189,60 +1189,323 @@ function KraviX:CreateWindow(config)
 
     -- ===== BOTÃO 2: PLAYER LIST / WHITELIST & VIEW =====
     _G.KraviX_GlobalWhitelist = _G.KraviX_GlobalWhitelist or {}
+    _G.KraviX_PlayerStatus    = _G.KraviX_PlayerStatus or {}
     _G.KraviX_ViewingPlayer   = nil
 
     local MiniPlayers = Window:CreateMiniUI({
-        Title = "Player List & Whitelist", Width = 340, Height = 380,
-        DefaultPosition = UDim2.new(0.5, -310, 0.5, -190),
+        Title = "Matcha · Player List", Width = 560, Height = 390,
+        DefaultPosition = UDim2.new(0.5, -280, 0.5, -195),
         OnToggle = function(on) BtnTheme.SetActive(on) end
     })
 
-    -- Limpa layout padrao do MBody para usar um layout customizado de alta estetica
+    -- Limpa layout padrao do MBody para usar o layout Matcha 2-colunas
     for _, child in ipairs(MiniPlayers.Body:GetChildren()) do
         if child:IsA("UIListLayout") or child:IsA("UIPadding") then
             child:Destroy()
         end
     end
 
-    -- Sub Stats Indicator Bar
-    local StatsBar = Instance.new("Frame", MiniPlayers.Body)
-    StatsBar.Size = UDim2.new(1, 0, 0, 20)
-    StatsBar.Position = UDim2.new(0, 0, 0, 0)
-    StatsBar.BackgroundTransparency = 1
-    StatsBar.ZIndex = MiniPlayers.Frame.ZIndex + 2
-    StatsBar:SetAttribute("RelZIndex", 2)
+    local selectedPlayer = LocalPlayer
+    local searchText = ""
 
-    local StatsLabel = Instance.new("TextLabel", StatsBar)
-    StatsLabel.Size = UDim2.new(1, 0, 1, 0)
-    StatsLabel.BackgroundTransparency = 1
-    StatsLabel.Text = "Server Players: 0  |  Whitelisted: 0"
-    StatsLabel.TextColor3 = C.Sub
-    StatsLabel.TextSize = 10
-    StatsLabel.Font = Enum.Font.GothamMedium
-    StatsLabel.TextXAlignment = Enum.TextXAlignment.Left
-    StatsLabel.ZIndex = MiniPlayers.Frame.ZIndex + 2
-    StatsLabel:SetAttribute("RelZIndex", 2)
+    -- Left Column Frame (Player List)
+    local LeftCol = Instance.new("Frame", MiniPlayers.Body)
+    LeftCol.Size = UDim2.new(0, 265, 1, 0)
+    LeftCol.Position = UDim2.new(0, 0, 0, 0)
+    LeftCol.BackgroundTransparency = 1
+    LeftCol.ZIndex = MiniPlayers.Frame.ZIndex + 2
+    LeftCol:SetAttribute("RelZIndex", 2)
 
-    -- Scrolling Frame para os cards dos players
-    local PlayerScroll = Instance.new("ScrollingFrame", MiniPlayers.Body)
-    PlayerScroll.Size = UDim2.new(1, 0, 1, -26)
-    PlayerScroll.Position = UDim2.new(0, 0, 0, 26)
+    -- Header Title "Players [N]"
+    local PlayersTitle = Instance.new("TextLabel", LeftCol)
+    PlayersTitle.Size = UDim2.new(1, 0, 0, 20)
+    PlayersTitle.Position = UDim2.new(0, 0, 0, 0)
+    PlayersTitle.BackgroundTransparency = 1
+    PlayersTitle.Text = "Players [0]"
+    PlayersTitle.TextColor3 = Color3.fromRGB(230, 230, 235)
+    PlayersTitle.TextSize = 13
+    PlayersTitle.Font = Enum.Font.GothamBold
+    PlayersTitle.TextXAlignment = Enum.TextXAlignment.Left
+    PlayersTitle.ZIndex = MiniPlayers.Frame.ZIndex + 2
+    PlayersTitle:SetAttribute("RelZIndex", 2)
+
+    -- Search Box
+    local SearchCont = Instance.new("Frame", LeftCol)
+    SearchCont.Size = UDim2.new(1, 0, 0, 32)
+    SearchCont.Position = UDim2.new(0, 0, 0, 26)
+    SearchCont.BackgroundColor3 = Color3.fromRGB(20, 18, 24)
+    SearchCont.ZIndex = MiniPlayers.Frame.ZIndex + 2
+    SearchCont:SetAttribute("RelZIndex", 2)
+    mkCorner(SearchCont, 8)
+    local searchSt = mkStroke(SearchCont, Color3.fromRGB(36, 32, 44), 1, 0)
+    searchSt:SetAttribute("RelZIndex", 2)
+
+    local SearchBox = Instance.new("TextBox", SearchCont)
+    SearchBox.Size = UDim2.new(1, -16, 1, 0)
+    SearchBox.Position = UDim2.new(0, 10, 0, 0)
+    SearchBox.BackgroundTransparency = 1
+    SearchBox.PlaceholderText = "Search player..."
+    SearchBox.PlaceholderColor3 = Color3.fromRGB(110, 105, 120)
+    SearchBox.Text = ""
+    SearchBox.TextColor3 = Color3.fromRGB(240, 240, 245)
+    SearchBox.TextSize = 11
+    SearchBox.Font = Enum.Font.GothamMedium
+    SearchBox.TextXAlignment = Enum.TextXAlignment.Left
+    SearchBox.ClearTextOnFocus = false
+    SearchBox.ZIndex = MiniPlayers.Frame.ZIndex + 3
+    SearchBox:SetAttribute("RelZIndex", 3)
+
+    -- Table Column Headers (Name & Status)
+    local HeaderRow = Instance.new("Frame", LeftCol)
+    HeaderRow.Size = UDim2.new(1, 0, 0, 20)
+    HeaderRow.Position = UDim2.new(0, 0, 0, 64)
+    HeaderRow.BackgroundTransparency = 1
+    HeaderRow.ZIndex = MiniPlayers.Frame.ZIndex + 2
+    HeaderRow:SetAttribute("RelZIndex", 2)
+
+    local NameColText = Instance.new("TextLabel", HeaderRow)
+    NameColText.Size = UDim2.new(0.6, 0, 1, 0)
+    NameColText.Position = UDim2.new(0, 10, 0, 0)
+    NameColText.BackgroundTransparency = 1
+    NameColText.Text = "Name"
+    NameColText.TextColor3 = Color3.fromRGB(120, 115, 130)
+    NameColText.TextSize = 11
+    NameColText.Font = Enum.Font.GothamMedium
+    NameColText.TextXAlignment = Enum.TextXAlignment.Left
+    NameColText.ZIndex = MiniPlayers.Frame.ZIndex + 2
+    NameColText:SetAttribute("RelZIndex", 2)
+
+    local StatusColText = Instance.new("TextLabel", HeaderRow)
+    StatusColText.Size = UDim2.new(0.4, -10, 1, 0)
+    StatusColText.Position = UDim2.new(0.6, 0, 0, 0)
+    StatusColText.BackgroundTransparency = 1
+    StatusColText.Text = "Status"
+    StatusColText.TextColor3 = Color3.fromRGB(120, 115, 130)
+    StatusColText.TextSize = 11
+    StatusColText.Font = Enum.Font.GothamMedium
+    StatusColText.TextXAlignment = Enum.TextXAlignment.Right
+    StatusColText.ZIndex = MiniPlayers.Frame.ZIndex + 2
+    StatusColText:SetAttribute("RelZIndex", 2)
+
+    -- Scrolling Frame for Player Rows
+    local PlayerScroll = Instance.new("ScrollingFrame", LeftCol)
+    PlayerScroll.Size = UDim2.new(1, 0, 1, -88)
+    PlayerScroll.Position = UDim2.new(0, 0, 0, 88)
     PlayerScroll.BackgroundTransparency = 1
     PlayerScroll.BorderSizePixel = 0
     PlayerScroll.ScrollBarThickness = 3
-    PlayerScroll.ScrollBarImageColor3 = C.Accent
+    PlayerScroll.ScrollBarImageColor3 = Color3.fromRGB(236, 72, 138)
     PlayerScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
     PlayerScroll.ZIndex = MiniPlayers.Frame.ZIndex + 2
     PlayerScroll:SetAttribute("RelZIndex", 2)
 
     local ScrollLayout = Instance.new("UIListLayout", PlayerScroll)
     ScrollLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    ScrollLayout.Padding = UDim.new(0, 6)
+    ScrollLayout.Padding = UDim.new(0, 3)
 
     local function updateCanvas()
         PlayerScroll.CanvasSize = UDim2.new(0, 0, 0, ScrollLayout.AbsoluteContentSize.Y + 10)
     end
     ScrollLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvas)
+
+    -- Right Column Frame (Selected Player Panel)
+    local RightCol = Instance.new("Frame", MiniPlayers.Body)
+    RightCol.Size = UDim2.new(0, 275, 1, 0)
+    RightCol.Position = UDim2.new(0, 280, 0, 0)
+    RightCol.BackgroundTransparency = 1
+    RightCol.ZIndex = MiniPlayers.Frame.ZIndex + 2
+    RightCol:SetAttribute("RelZIndex", 2)
+
+    local SelTitle = Instance.new("TextLabel", RightCol)
+    SelTitle.Size = UDim2.new(1, 0, 0, 20)
+    SelTitle.Position = UDim2.new(0, 0, 0, 0)
+    SelTitle.BackgroundTransparency = 1
+    SelTitle.Text = "Selected Player"
+    SelTitle.TextColor3 = Color3.fromRGB(230, 230, 235)
+    SelTitle.TextSize = 13
+    SelTitle.Font = Enum.Font.GothamBold
+    SelTitle.TextXAlignment = Enum.TextXAlignment.Left
+    SelTitle.ZIndex = MiniPlayers.Frame.ZIndex + 2
+    SelTitle:SetAttribute("RelZIndex", 2)
+
+    -- Avatar & Details Container
+    local AvatarCont = Instance.new("Frame", RightCol)
+    AvatarCont.Size = UDim2.new(1, 0, 0, 100)
+    AvatarCont.Position = UDim2.new(0, 0, 0, 26)
+    AvatarCont.BackgroundTransparency = 1
+    AvatarCont.ZIndex = MiniPlayers.Frame.ZIndex + 2
+    AvatarCont:SetAttribute("RelZIndex", 2)
+
+    local AvatarImg = Instance.new("ImageLabel", AvatarCont)
+    AvatarImg.Size = UDim2.new(0, 56, 0, 56)
+    AvatarImg.Position = UDim2.new(0.5, -28, 0, 0)
+    AvatarImg.BackgroundColor3 = Color3.fromRGB(24, 22, 30)
+    AvatarImg.Image = "rbxthumb://type=AvatarHeadShot&id=1&w=150&h=150"
+    AvatarImg.ZIndex = MiniPlayers.Frame.ZIndex + 3
+    AvatarImg:SetAttribute("RelZIndex", 3)
+    mkCorner(AvatarImg, 28)
+    local avStroke = mkStroke(AvatarImg, Color3.fromRGB(45, 40, 54), 1, 0)
+    avStroke:SetAttribute("RelZIndex", 3)
+
+    local SelNameLabel = Instance.new("TextLabel", AvatarCont)
+    SelNameLabel.Size = UDim2.new(1, 0, 0, 18)
+    SelNameLabel.Position = UDim2.new(0, 0, 0, 60)
+    SelNameLabel.BackgroundTransparency = 1
+    SelNameLabel.Text = "Ninguém Selecionado"
+    SelNameLabel.TextColor3 = C.White
+    SelNameLabel.TextSize = 13
+    SelNameLabel.Font = Enum.Font.GothamBold
+    SelNameLabel.TextXAlignment = Enum.TextXAlignment.Center
+    SelNameLabel.ZIndex = MiniPlayers.Frame.ZIndex + 3
+    SelNameLabel:SetAttribute("RelZIndex", 3)
+
+    local SelIdLabel = Instance.new("TextLabel", AvatarCont)
+    SelIdLabel.Size = UDim2.new(1, 0, 0, 14)
+    SelIdLabel.Position = UDim2.new(0, 0, 0, 78)
+    SelIdLabel.BackgroundTransparency = 1
+    SelIdLabel.Text = "0"
+    SelIdLabel.TextColor3 = Color3.fromRGB(120, 115, 130)
+    SelIdLabel.TextSize = 10
+    SelIdLabel.Font = Enum.Font.Gotham
+    SelIdLabel.TextXAlignment = Enum.TextXAlignment.Center
+    SelIdLabel.ZIndex = MiniPlayers.Frame.ZIndex + 3
+    SelIdLabel:SetAttribute("RelZIndex", 3)
+
+    -- Status Selector Frame
+    local StatusSection = Instance.new("Frame", RightCol)
+    StatusSection.Size = UDim2.new(1, 0, 0, 52)
+    StatusSection.Position = UDim2.new(0, 0, 0, 132)
+    StatusSection.BackgroundTransparency = 1
+    StatusSection.ZIndex = MiniPlayers.Frame.ZIndex + 2
+    StatusSection:SetAttribute("RelZIndex", 2)
+
+    local StatusTitle = Instance.new("TextLabel", StatusSection)
+    StatusTitle.Size = UDim2.new(1, 0, 0, 16)
+    StatusTitle.Position = UDim2.new(0, 0, 0, 0)
+    StatusTitle.BackgroundTransparency = 1
+    StatusTitle.Text = "Status"
+    StatusTitle.TextColor3 = Color3.fromRGB(130, 125, 140)
+    StatusTitle.TextSize = 11
+    StatusTitle.Font = Enum.Font.GothamMedium
+    StatusTitle.TextXAlignment = Enum.TextXAlignment.Left
+    StatusTitle.ZIndex = MiniPlayers.Frame.ZIndex + 2
+    StatusTitle:SetAttribute("RelZIndex", 2)
+
+    local StatusDropBtn = Instance.new("TextButton", StatusSection)
+    StatusDropBtn.Size = UDim2.new(1, 0, 0, 32)
+    StatusDropBtn.Position = UDim2.new(0, 0, 0, 18)
+    StatusDropBtn.BackgroundColor3 = Color3.fromRGB(20, 18, 24)
+    StatusDropBtn.Text = "  None"
+    StatusDropBtn.TextColor3 = C.White
+    StatusDropBtn.TextSize = 11
+    StatusDropBtn.Font = Enum.Font.GothamMedium
+    StatusDropBtn.TextXAlignment = Enum.TextXAlignment.Left
+    StatusDropBtn.AutoButtonColor = false
+    StatusDropBtn.ZIndex = MiniPlayers.Frame.ZIndex + 3
+    StatusDropBtn:SetAttribute("RelZIndex", 3)
+    mkCorner(StatusDropBtn, 8)
+    local sDropSt = mkStroke(StatusDropBtn, Color3.fromRGB(36, 32, 44), 1, 0)
+    sDropSt:SetAttribute("RelZIndex", 3)
+
+    local DropArrow = Instance.new("TextLabel", StatusDropBtn)
+    DropArrow.Size = UDim2.new(0, 24, 1, 0)
+    DropArrow.Position = UDim2.new(1, -24, 0, 0)
+    DropArrow.BackgroundTransparency = 1
+    DropArrow.Text = "v"
+    DropArrow.TextColor3 = Color3.fromRGB(140, 135, 150)
+    DropArrow.TextSize = 11
+    DropArrow.Font = Enum.Font.GothamBold
+    DropArrow.ZIndex = MiniPlayers.Frame.ZIndex + 3
+    DropArrow:SetAttribute("RelZIndex", 3)
+
+    -- Action Grid Frame (2x2)
+    local ActionGrid = Instance.new("Frame", RightCol)
+    ActionGrid.Size = UDim2.new(1, 0, 0, 76)
+    ActionGrid.Position = UDim2.new(0, 0, 0, 195)
+    ActionGrid.BackgroundTransparency = 1
+    ActionGrid.ZIndex = MiniPlayers.Frame.ZIndex + 2
+    ActionGrid:SetAttribute("RelZIndex", 2)
+
+    -- Row 1: Teleport & Spectate
+    local BtnTeleport = Instance.new("TextButton", ActionGrid)
+    BtnTeleport.Size = UDim2.new(0.48, 0, 0, 34)
+    BtnTeleport.Position = UDim2.new(0, 0, 0, 0)
+    BtnTeleport.BackgroundColor3 = Color3.fromRGB(22, 20, 28)
+    BtnTeleport.Text = "Teleport"
+    BtnTeleport.TextColor3 = C.White
+    BtnTeleport.TextSize = 11
+    BtnTeleport.Font = Enum.Font.GothamBold
+    BtnTeleport.AutoButtonColor = false
+    BtnTeleport.ZIndex = MiniPlayers.Frame.ZIndex + 3
+    BtnTeleport:SetAttribute("RelZIndex", 3)
+    mkCorner(BtnTeleport, 8)
+    local tpSt = mkStroke(BtnTeleport, Color3.fromRGB(38, 34, 48), 1, 0)
+    tpSt:SetAttribute("RelZIndex", 3)
+
+    local BtnSpectate = Instance.new("TextButton", ActionGrid)
+    BtnSpectate.Size = UDim2.new(0.48, 0, 0, 34)
+    BtnSpectate.Position = UDim2.new(0.52, 0, 0, 0)
+    BtnSpectate.BackgroundColor3 = Color3.fromRGB(22, 20, 28)
+    BtnSpectate.Text = "Spectate"
+    BtnSpectate.TextColor3 = C.White
+    BtnSpectate.TextSize = 11
+    BtnSpectate.Font = Enum.Font.GothamBold
+    BtnSpectate.AutoButtonColor = false
+    BtnSpectate.ZIndex = MiniPlayers.Frame.ZIndex + 3
+    BtnSpectate:SetAttribute("RelZIndex", 3)
+    mkCorner(BtnSpectate, 8)
+    local spSt = mkStroke(BtnSpectate, Color3.fromRGB(38, 34, 48), 1, 0)
+    spSt:SetAttribute("RelZIndex", 3)
+
+    -- Row 2: Unspectate & Fling
+    local BtnUnspectate = Instance.new("TextButton", ActionGrid)
+    BtnUnspectate.Size = UDim2.new(0.48, 0, 0, 34)
+    BtnUnspectate.Position = UDim2.new(0, 0, 0, 40)
+    BtnUnspectate.BackgroundColor3 = Color3.fromRGB(22, 20, 28)
+    BtnUnspectate.Text = "Unspectate"
+    BtnUnspectate.TextColor3 = C.White
+    BtnUnspectate.TextSize = 11
+    BtnUnspectate.Font = Enum.Font.GothamBold
+    BtnUnspectate.AutoButtonColor = false
+    BtnUnspectate.ZIndex = MiniPlayers.Frame.ZIndex + 3
+    BtnUnspectate:SetAttribute("RelZIndex", 3)
+    mkCorner(BtnUnspectate, 8)
+    local unSt = mkStroke(BtnUnspectate, Color3.fromRGB(38, 34, 48), 1, 0)
+    unSt:SetAttribute("RelZIndex", 3)
+
+    local BtnFling = Instance.new("TextButton", ActionGrid)
+    BtnFling.Size = UDim2.new(0.48, 0, 0, 34)
+    BtnFling.Position = UDim2.new(0.52, 0, 0, 40)
+    BtnFling.BackgroundColor3 = Color3.fromRGB(90, 32, 64)
+    BtnFling.Text = "Fling"
+    BtnFling.TextColor3 = C.White
+    BtnFling.TextSize = 11
+    BtnFling.Font = Enum.Font.GothamBold
+    BtnFling.AutoButtonColor = false
+    BtnFling.ZIndex = MiniPlayers.Frame.ZIndex + 3
+    BtnFling:SetAttribute("RelZIndex", 3)
+    mkCorner(BtnFling, 8)
+    local flSt = mkStroke(BtnFling, Color3.fromRGB(180, 50, 120), 1, 0)
+    flSt:SetAttribute("RelZIndex", 3)
+
+    -- Logic functions for Player List & Inspector
+    local STATUS_OPTIONS = {"None", "Whitelist", "Priority", "Target", "Blacklist"}
+
+    local function getPlayerStatus(plr)
+        if plr == LocalPlayer then return "Client" end
+        return _G.KraviX_PlayerStatus[plr.UserId] or (_G.KraviX_GlobalWhitelist[plr.UserId] and "Whitelist" or "None")
+    end
+
+    local function updateSelectedPanel()
+        if not selectedPlayer or not selectedPlayer.Parent then
+            selectedPlayer = LocalPlayer
+        end
+        AvatarImg.Image = "rbxthumb://type=AvatarHeadShot&id=" .. selectedPlayer.UserId .. "&w=150&h=150"
+        SelNameLabel.Text = selectedPlayer.DisplayName or selectedPlayer.Name
+        SelIdLabel.Text = tostring(selectedPlayer.UserId)
+        local curStatus = getPlayerStatus(selectedPlayer)
+        StatusDropBtn.Text = "  " .. curStatus
+    end
 
     local function refreshPlayerList()
         for _, child in ipairs(PlayerScroll:GetChildren()) do
@@ -1250,159 +1513,163 @@ function KraviX:CreateWindow(config)
         end
 
         local allPlayers = Players:GetPlayers()
-        local totalCount = 0
-        local wlCount = 0
+        local filter = SearchBox.Text:lower()
+        local count = 0
 
         for _, plr in ipairs(allPlayers) do
-            local isWL = (_G.KraviX_GlobalWhitelist[plr.UserId] == true) or (_G.KraviX_GlobalWhitelist[plr.Name] == true)
-            if isWL then wlCount = wlCount + 1 end
-        end
-
-        for _, plr in ipairs(allPlayers) do
-            if plr ~= LocalPlayer then
-                local dName = plr.DisplayName or plr.Name
-                local uName = plr.Name
-                totalCount = totalCount + 1
-                local isWL = (_G.KraviX_GlobalWhitelist[plr.UserId] == true) or (_G.KraviX_GlobalWhitelist[plr.Name] == true)
-                local isView = (_G.KraviX_ViewingPlayer == plr)
+            local name = (plr.DisplayName or plr.Name):lower()
+            local uname = plr.Name:lower()
+            if filter == "" or name:find(filter, 1, true) or uname:find(filter, 1, true) then
+                count = count + 1
+                local isSel = (selectedPlayer == plr)
+                local curStatus = getPlayerStatus(plr)
 
                 local Card = Instance.new("Frame", PlayerScroll)
-                Card.Size = UDim2.new(1, -4, 0, 44)
-                Card.BackgroundColor3 = isWL and Color3.fromRGB(34, 14, 52) or Color3.fromRGB(0, 0, 0)
+                Card.Size = UDim2.new(1, 0, 0, 34)
+                Card.BackgroundColor3 = isSel and Color3.fromRGB(28, 20, 34) or Color3.fromRGB(16, 14, 20)
                 Card.BorderSizePixel = 0
                 Card.ZIndex = MiniPlayers.Frame.ZIndex + 2
                 Card:SetAttribute("RelZIndex", 2)
-                mkCorner(Card, 10)
-                local cardStroke = mkStroke(Card, isWL and C.Accent or Color3.fromRGB(30, 30, 30), 1, 0)
-                cardStroke:SetAttribute("RelZIndex", 2)
+                mkCorner(Card, 6)
 
-                -- Hover animation on Card
-                Card.MouseEnter:Connect(function()
-                    Tween(Card, {BackgroundColor3 = isWL and Color3.fromRGB(44, 20, 66) or Color3.fromRGB(12, 12, 12)}, 0.12):Play()
+                -- Left pink line indicator
+                local IndBar = Instance.new("Frame", Card)
+                IndBar.Size = UDim2.new(0, 3, 1, 0)
+                IndBar.Position = UDim2.new(0, 0, 0, 0)
+                IndBar.BackgroundColor3 = (isSel or curStatus ~= "None") and Color3.fromRGB(236, 72, 138) or Color3.fromRGB(40, 36, 48)
+                IndBar.BorderSizePixel = 0
+                IndBar.ZIndex = MiniPlayers.Frame.ZIndex + 3
+                IndBar:SetAttribute("RelZIndex", 3)
+
+                -- Name Label
+                local NameLbl = Instance.new("TextLabel", Card)
+                NameLbl.Size = UDim2.new(0.6, -12, 1, 0)
+                NameLbl.Position = UDim2.new(0, 10, 0, 0)
+                NameLbl.BackgroundTransparency = 1
+                NameLbl.Text = plr.DisplayName or plr.Name
+                NameLbl.TextColor3 = (isSel or curStatus ~= "None") and Color3.fromRGB(236, 72, 138) or Color3.fromRGB(210, 210, 220)
+                NameLbl.TextSize = 12
+                NameLbl.Font = Enum.Font.GothamMedium
+                NameLbl.TextXAlignment = Enum.TextXAlignment.Left
+                NameLbl.TextTruncate = Enum.TextTruncate.AtEnd
+                NameLbl.ZIndex = MiniPlayers.Frame.ZIndex + 3
+                NameLbl:SetAttribute("RelZIndex", 3)
+
+                -- Status Label Badge
+                local StatusLbl = Instance.new("TextLabel", Card)
+                StatusLbl.Size = UDim2.new(0.4, -10, 1, 0)
+                StatusLbl.Position = UDim2.new(0.6, 0, 0, 0)
+                StatusLbl.BackgroundTransparency = 1
+                StatusLbl.Text = curStatus
+                StatusLbl.TextColor3 = Color3.fromRGB(236, 72, 138)
+                StatusLbl.TextSize = 11
+                StatusLbl.Font = Enum.Font.GothamBold
+                StatusLbl.TextXAlignment = Enum.TextXAlignment.Right
+                StatusLbl.ZIndex = MiniPlayers.Frame.ZIndex + 3
+                StatusLbl:SetAttribute("RelZIndex", 3)
+
+                local CardBtn = Instance.new("TextButton", Card)
+                CardBtn.Size = UDim2.new(1, 0, 1, 0)
+                CardBtn.BackgroundTransparency = 1
+                CardBtn.Text = ""
+                CardBtn.ZIndex = MiniPlayers.Frame.ZIndex + 4
+                CardBtn:SetAttribute("RelZIndex", 4)
+
+                CardBtn.MouseButton1Click:Connect(function()
+                    selectedPlayer = plr
+                    updateSelectedPanel()
+                    refreshPlayerList()
                 end)
-                Card.MouseLeave:Connect(function()
-                    Tween(Card, {BackgroundColor3 = isWL and Color3.fromRGB(34, 14, 52) or Color3.fromRGB(0, 0, 0)}, 0.12):Play()
-                end)
-
-                    -- Avatar Headshot Thumbnail
-                    local AvatarImg = Instance.new("ImageLabel", Card)
-                    AvatarImg.Size = UDim2.new(0, 32, 0, 32)
-                    AvatarImg.Position = UDim2.new(0, 6, 0.5, -16)
-                    AvatarImg.BackgroundColor3 = Color3.fromRGB(25, 25, 32)
-                    AvatarImg.Image = "rbxthumb://type=AvatarHeadShot&id=" .. plr.UserId .. "&w=150&h=150"
-                    AvatarImg.ZIndex = MiniPlayers.Frame.ZIndex + 3
-                    AvatarImg:SetAttribute("RelZIndex", 3)
-                    mkCorner(AvatarImg, 16)
-                    local avStroke = mkStroke(AvatarImg, isWL and C.Accent or Color3.fromRGB(40, 40, 50), 1, 0)
-                    avStroke:SetAttribute("RelZIndex", 3)
-
-                    -- Name & Username text container
-                    local InfoCont = Instance.new("Frame", Card)
-                    InfoCont.Size = UDim2.new(1, -160, 1, 0)
-                    InfoCont.Position = UDim2.new(0, 44, 0, 0)
-                    InfoCont.BackgroundTransparency = 1
-                    InfoCont.ZIndex = MiniPlayers.Frame.ZIndex + 3
-                    InfoCont:SetAttribute("RelZIndex", 3)
-
-                    local DisplayLabel = Instance.new("TextLabel", InfoCont)
-                    DisplayLabel.Size = UDim2.new(1, 0, 0, 18)
-                    DisplayLabel.Position = UDim2.new(0, 0, 0, 6)
-                    DisplayLabel.BackgroundTransparency = 1
-                    DisplayLabel.Text = dName
-                    DisplayLabel.TextColor3 = isWL and C.Accent2 or C.White
-                    DisplayLabel.TextSize = 11
-                    DisplayLabel.Font = Enum.Font.GothamBold
-                    DisplayLabel.TextXAlignment = Enum.TextXAlignment.Left
-                    DisplayLabel.TextTruncate = Enum.TextTruncate.AtEnd
-                    DisplayLabel.ZIndex = MiniPlayers.Frame.ZIndex + 3
-                    DisplayLabel:SetAttribute("RelZIndex", 3)
-
-                    local UserLabel = Instance.new("TextLabel", InfoCont)
-                    UserLabel.Size = UDim2.new(1, 0, 0, 14)
-                    UserLabel.Position = UDim2.new(0, 0, 0, 22)
-                    UserLabel.BackgroundTransparency = 1
-                    UserLabel.Text = "@" .. uName
-                    UserLabel.TextColor3 = C.Sub
-                    UserLabel.TextSize = 9
-                    UserLabel.Font = Enum.Font.Gotham
-                    UserLabel.TextXAlignment = Enum.TextXAlignment.Left
-                    UserLabel.TextTruncate = Enum.TextTruncate.AtEnd
-                    UserLabel.ZIndex = MiniPlayers.Frame.ZIndex + 3
-                    UserLabel:SetAttribute("RelZIndex", 3)
-
-                    -- View Button
-                    local ViewBtn = Instance.new("TextButton", Card)
-                    ViewBtn.Size = UDim2.new(0, 52, 0, 24)
-                    ViewBtn.Position = UDim2.new(1, -122, 0.5, -12)
-                    ViewBtn.BackgroundColor3 = isView and C.Green or Color3.fromRGB(25, 25, 34)
-                    ViewBtn.Text = isView and "Viewing" or "View"
-                    ViewBtn.TextColor3 = isView and C.Black or C.White
-                    ViewBtn.TextSize = 10
-                    ViewBtn.Font = Enum.Font.GothamBold
-                    ViewBtn.AutoButtonColor = false
-                    ViewBtn.ZIndex = MiniPlayers.Frame.ZIndex + 3
-                    ViewBtn:SetAttribute("RelZIndex", 3)
-                    mkCorner(ViewBtn, 8)
-                    local vSt = mkStroke(ViewBtn, isView and C.Green or Color3.fromRGB(42, 42, 54), 1, 0)
-                    vSt:SetAttribute("RelZIndex", 3)
-
-                    ViewBtn.MouseButton1Click:Connect(function()
-                        if _G.KraviX_ViewingPlayer == plr then
-                            _G.KraviX_ViewingPlayer = nil
-                            pcall(function()
-                                if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
-                                    workspace.CurrentCamera.CameraSubject = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-                                end
-                            end)
-                            CreateNotification("View", "Visão resetada.", 2, "info")
-                        else
-                            if plr.Character and plr.Character:FindFirstChildOfClass("Humanoid") then
-                                _G.KraviX_ViewingPlayer = plr
-                                workspace.CurrentCamera.CameraSubject = plr.Character:FindFirstChildOfClass("Humanoid")
-                                CreateNotification("View", "Assistindo: " .. dName, 2, "success")
-                            else
-                                CreateNotification("View", "Jogador sem personagem ativo.", 2, "error")
-                            end
-                        end
-                        refreshPlayerList()
-                    end)
-
-                    -- Whitelist Button
-                    local WlBtn = Instance.new("TextButton", Card)
-                    WlBtn.Size = UDim2.new(0, 62, 0, 24)
-                    WlBtn.Position = UDim2.new(1, -66, 0.5, -12)
-                    WlBtn.BackgroundColor3 = isWL and C.Accent or Color3.fromRGB(25, 25, 34)
-                    WlBtn.Text = isWL and "Whitelisted" or "Whitelist"
-                    WlBtn.TextColor3 = isWL and C.White or Color3.fromRGB(180, 180, 180)
-                    WlBtn.TextSize = 9
-                    WlBtn.Font = Enum.Font.GothamBold
-                    WlBtn.AutoButtonColor = false
-                    WlBtn.ZIndex = MiniPlayers.Frame.ZIndex + 3
-                    WlBtn:SetAttribute("RelZIndex", 3)
-                    mkCorner(WlBtn, 8)
-                    local wSt = mkStroke(WlBtn, isWL and C.Accent2 or Color3.fromRGB(42, 42, 54), 1, 0)
-                    wSt:SetAttribute("RelZIndex", 3)
-
-                    WlBtn.MouseButton1Click:Connect(function()
-                        if isWL then
-                            _G.KraviX_GlobalWhitelist[plr.UserId] = nil
-                            _G.KraviX_GlobalWhitelist[plr.Name] = nil
-                            CreateNotification("Whitelist", dName .. " removido da Whitelist!", 3, "info")
-                        else
-                            _G.KraviX_GlobalWhitelist[plr.UserId] = true
-                            _G.KraviX_GlobalWhitelist[plr.Name] = true
-                            CreateNotification("Whitelist", dName .. " adicionado à Whitelist!", 3, "success")
-                        end
-                        refreshPlayerList()
-                    end)
-                end
             end
-        StatsLabel.Text = "Server Players: " .. (#allPlayers - 1) .. "  |  Whitelisted: " .. wlCount
+        end
+
+        PlayersTitle.Text = "Players [" .. count .. "]"
         updateCanvas()
     end
 
+    SearchBox:GetPropertyChangedSignal("Text"):Connect(refreshPlayerList)
+
+    StatusDropBtn.MouseButton1Click:Connect(function()
+        if not selectedPlayer or selectedPlayer == LocalPlayer then return end
+        local cur = getPlayerStatus(selectedPlayer)
+        local idx = table.find(STATUS_OPTIONS, cur) or 1
+        idx = idx + 1
+        if idx > #STATUS_OPTIONS then idx = 1 end
+        local nextStatus = STATUS_OPTIONS[idx]
+        
+        _G.KraviX_PlayerStatus[selectedPlayer.UserId] = nextStatus
+        if nextStatus == "Whitelist" then
+            _G.KraviX_GlobalWhitelist[selectedPlayer.UserId] = true
+            _G.KraviX_GlobalWhitelist[selectedPlayer.Name] = true
+        else
+            _G.KraviX_GlobalWhitelist[selectedPlayer.UserId] = nil
+            _G.KraviX_GlobalWhitelist[selectedPlayer.Name] = nil
+        end
+        updateSelectedPanel()
+        refreshPlayerList()
+    end)
+
+    BtnTeleport.MouseButton1Click:Connect(function()
+        if selectedPlayer and selectedPlayer.Character and selectedPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                LocalPlayer.Character.HumanoidRootPart.CFrame = selectedPlayer.Character.HumanoidRootPart.CFrame
+                CreateNotification("Teleport", "Teleportado para " .. selectedPlayer.DisplayName, 2, "success")
+            end
+        end
+    end)
+
+    BtnSpectate.MouseButton1Click:Connect(function()
+        if selectedPlayer and selectedPlayer.Character and selectedPlayer.Character:FindFirstChildOfClass("Humanoid") then
+            _G.KraviX_ViewingPlayer = selectedPlayer
+            workspace.CurrentCamera.CameraSubject = selectedPlayer.Character:FindFirstChildOfClass("Humanoid")
+            CreateNotification("Spectate", "Assistindo: " .. selectedPlayer.DisplayName, 2, "info")
+        end
+    end)
+
+    BtnUnspectate.MouseButton1Click:Connect(function()
+        _G.KraviX_ViewingPlayer = nil
+        pcall(function()
+            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+                workspace.CurrentCamera.CameraSubject = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            end
+        end)
+        CreateNotification("Spectate", "Visão resetada", 2, "info")
+    end)
+
+    BtnFling.MouseButton1Click:Connect(function()
+        if not selectedPlayer or selectedPlayer == LocalPlayer then return end
+        local targetPlr = selectedPlayer
+        if not targetPlr.Character or not targetPlr.Character:FindFirstChild("HumanoidRootPart") then return end
+        if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then return end
+        
+        local root = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        local targetRoot = targetPlr.Character:FindFirstChild("HumanoidRootPart")
+        
+        local oldPos = root.CFrame
+        local bV = Instance.new("BodyVelocity", root)
+        bV.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+        bV.Velocity = Vector3.new(99999, 99999, 99999)
+
+        local bAV = Instance.new("BodyAngularVelocity", root)
+        bAV.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+        bAV.AngularVelocity = Vector3.new(99999, 99999, 99999)
+
+        CreateNotification("Fling", "Flings ativado em: " .. targetPlr.DisplayName, 2, "warning")
+        task.spawn(function()
+            for i = 1, 40 do
+                if not root or not targetRoot then break end
+                root.CFrame = targetRoot.CFrame * CFrame.new(0, 0, 0)
+                RunService.Heartbeat:Wait()
+            end
+            bV:Destroy()
+            bAV:Destroy()
+            root.CFrame = oldPos
+        end)
+    end)
+
     Players.PlayerAdded:Connect(function() task.delay(0.2, refreshPlayerList) end)
     Players.PlayerRemoving:Connect(function(p)
+        if selectedPlayer == p then selectedPlayer = LocalPlayer end
         if _G.KraviX_ViewingPlayer == p then
             _G.KraviX_ViewingPlayer = nil
             pcall(function()
@@ -1413,6 +1680,8 @@ function KraviX:CreateWindow(config)
         end
         task.delay(0.2, refreshPlayerList)
     end)
+
+    updateSelectedPanel()
     refreshPlayerList()
 
     BtnTheme.Button.MouseButton1Click:Connect(function()
@@ -1446,34 +1715,110 @@ function KraviX:CreateWindow(config)
 
     -- ===== BOTÃO 3: CONFIGURATIONS =====
     local MiniConfigs = Window:CreateMiniUI({
-        Title = "Configurations", Width = 300, Height = 310,
-        DefaultPosition = UDim2.new(0.5, 20, 0.5, -155),
+        Title = "Configurations", Width = 320, Height = 340,
+        DefaultPosition = UDim2.new(0.5, 20, 0.5, -170),
         OnToggle = function(on) BtnCloud.SetActive(on) end
     })
 
-    MiniConfigs:AddLabel("Gerenciador de Configurações (.cfg)", C.Sub)
-    
-    local cfgBox = MiniConfigs:AddTextbox("Nome da config...", "default", function() end)
+    -- Limpa layout padrao do MBody
+    for _, child in ipairs(MiniConfigs.Body:GetChildren()) do
+        if child:IsA("UIListLayout") or child:IsA("UIPadding") then
+            child:Destroy()
+        end
+    end
+
+    local CfgTitle = Instance.new("TextLabel", MiniConfigs.Body)
+    CfgTitle.Size = UDim2.new(1, 0, 0, 16)
+    CfgTitle.Position = UDim2.new(0, 0, 0, 0)
+    CfgTitle.BackgroundTransparency = 1
+    CfgTitle.Text = "Gerenciador de Configurações (.cfg)"
+    CfgTitle.TextColor3 = Color3.fromRGB(130, 125, 140)
+    CfgTitle.TextSize = 11
+    CfgTitle.Font = Enum.Font.GothamMedium
+    CfgTitle.TextXAlignment = Enum.TextXAlignment.Left
+    CfgTitle.ZIndex = MiniConfigs.Frame.ZIndex + 2
+    CfgTitle:SetAttribute("RelZIndex", 2)
+
+    -- Config Name Input Box
+    local CfgInputCont = Instance.new("Frame", MiniConfigs.Body)
+    CfgInputCont.Size = UDim2.new(1, 0, 0, 32)
+    CfgInputCont.Position = UDim2.new(0, 0, 0, 22)
+    CfgInputCont.BackgroundColor3 = Color3.fromRGB(20, 18, 24)
+    CfgInputCont.ZIndex = MiniConfigs.Frame.ZIndex + 2
+    CfgInputCont:SetAttribute("RelZIndex", 2)
+    mkCorner(CfgInputCont, 8)
+    local cfgInSt = mkStroke(CfgInputCont, Color3.fromRGB(36, 32, 44), 1, 0)
+    cfgInSt:SetAttribute("RelZIndex", 2)
+
+    local cfgBox = Instance.new("TextBox", CfgInputCont)
+    cfgBox.Size = UDim2.new(1, -16, 1, 0)
+    cfgBox.Position = UDim2.new(0, 10, 0, 0)
+    cfgBox.BackgroundTransparency = 1
+    cfgBox.PlaceholderText = "Nome da config..."
+    cfgBox.PlaceholderColor3 = Color3.fromRGB(110, 105, 120)
+    cfgBox.Text = "default"
+    cfgBox.TextColor3 = Color3.fromRGB(240, 240, 245)
+    cfgBox.TextSize = 11
+    cfgBox.Font = Enum.Font.GothamMedium
+    cfgBox.TextXAlignment = Enum.TextXAlignment.Left
+    cfgBox.ClearTextOnFocus = false
+    cfgBox.ZIndex = MiniConfigs.Frame.ZIndex + 3
+    cfgBox:SetAttribute("RelZIndex", 3)
 
     local selectedConfig = "default"
 
-    MiniConfigs:AddLabel("Configs Encontradas:", C.Sub)
+    local CfgListTitle = Instance.new("TextLabel", MiniConfigs.Body)
+    CfgListTitle.Size = UDim2.new(1, 0, 0, 16)
+    CfgListTitle.Position = UDim2.new(0, 0, 0, 62)
+    CfgListTitle.BackgroundTransparency = 1
+    CfgListTitle.Text = "Configs Encontradas:"
+    CfgListTitle.TextColor3 = Color3.fromRGB(130, 125, 140)
+    CfgListTitle.TextSize = 11
+    CfgListTitle.Font = Enum.Font.GothamMedium
+    CfgListTitle.TextXAlignment = Enum.TextXAlignment.Left
+    CfgListTitle.ZIndex = MiniConfigs.Frame.ZIndex + 2
+    CfgListTitle:SetAttribute("RelZIndex", 2)
 
-    local ConfigSelectBtn = MiniConfigs:AddButton("Config: default", function() end)
+    local ConfigSelectBtn = Instance.new("TextButton", MiniConfigs.Body)
+    ConfigSelectBtn.Size = UDim2.new(1, 0, 0, 32)
+    ConfigSelectBtn.Position = UDim2.new(0, 0, 0, 82)
+    ConfigSelectBtn.BackgroundColor3 = Color3.fromRGB(20, 18, 24)
+    ConfigSelectBtn.Text = "  Config: default"
+    ConfigSelectBtn.TextColor3 = C.White
+    ConfigSelectBtn.TextSize = 11
+    ConfigSelectBtn.Font = Enum.Font.GothamBold
+    ConfigSelectBtn.TextXAlignment = Enum.TextXAlignment.Left
+    ConfigSelectBtn.AutoButtonColor = false
+    ConfigSelectBtn.ZIndex = MiniConfigs.Frame.ZIndex + 3
+    ConfigSelectBtn:SetAttribute("RelZIndex", 3)
+    mkCorner(ConfigSelectBtn, 8)
+    local cfgSelSt = mkStroke(ConfigSelectBtn, Color3.fromRGB(36, 32, 44), 1, 0)
+    cfgSelSt:SetAttribute("RelZIndex", 3)
+
+    local CfgDropArrow = Instance.new("TextLabel", ConfigSelectBtn)
+    CfgDropArrow.Size = UDim2.new(0, 24, 1, 0)
+    CfgDropArrow.Position = UDim2.new(1, -24, 0, 0)
+    CfgDropArrow.BackgroundTransparency = 1
+    CfgDropArrow.Text = "v"
+    CfgDropArrow.TextColor3 = Color3.fromRGB(140, 135, 150)
+    CfgDropArrow.TextSize = 11
+    CfgDropArrow.Font = Enum.Font.GothamBold
+    CfgDropArrow.ZIndex = MiniConfigs.Frame.ZIndex + 3
+    CfgDropArrow:SetAttribute("RelZIndex", 3)
+
+    -- Action Grid Frame (2x2)
+    local CfgActionGrid = Instance.new("Frame", MiniConfigs.Body)
+    CfgActionGrid.Size = UDim2.new(1, 0, 0, 76)
+    CfgActionGrid.Position = UDim2.new(0, 0, 0, 126)
+    CfgActionGrid.BackgroundTransparency = 1
+    CfgActionGrid.ZIndex = MiniConfigs.Frame.ZIndex + 2
+    CfgActionGrid:SetAttribute("RelZIndex", 2)
 
     -- Row 1: Save & Load
-    local Row1 = Instance.new("Frame", MiniConfigs.Body)
-    Row1.Size = UDim2.new(1, 0, 0, 26)
-    Row1.BackgroundTransparency = 1
-    Row1.ZIndex = MiniConfigs.Frame.ZIndex + 2
-    Row1:SetAttribute("RelZIndex", 2)
-    local R1List = Instance.new("UIListLayout", Row1)
-    R1List.FillDirection = Enum.FillDirection.Horizontal
-    R1List.Padding = UDim.new(0, 6)
-
-    local SaveBtn = Instance.new("TextButton", Row1)
-    SaveBtn.Size = UDim2.new(0.5, -3, 1, 0)
-    SaveBtn.BackgroundColor3 = Color3.fromRGB(24, 16, 40)
+    local SaveBtn = Instance.new("TextButton", CfgActionGrid)
+    SaveBtn.Size = UDim2.new(0.48, 0, 0, 34)
+    SaveBtn.Position = UDim2.new(0, 0, 0, 0)
+    SaveBtn.BackgroundColor3 = Color3.fromRGB(90, 32, 64)
     SaveBtn.Text = "Salvar Config"
     SaveBtn.TextColor3 = C.White
     SaveBtn.TextSize = 11
@@ -1482,12 +1827,13 @@ function KraviX:CreateWindow(config)
     SaveBtn.ZIndex = MiniConfigs.Frame.ZIndex + 3
     SaveBtn:SetAttribute("RelZIndex", 3)
     mkCorner(SaveBtn, 8)
-    local sSt = mkStroke(SaveBtn, C.Accent, 1, 0)
+    local sSt = mkStroke(SaveBtn, Color3.fromRGB(180, 50, 120), 1, 0)
     sSt:SetAttribute("RelZIndex", 3)
 
-    local LoadBtn = Instance.new("TextButton", Row1)
-    LoadBtn.Size = UDim2.new(0.5, -3, 1, 0)
-    LoadBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
+    local LoadBtn = Instance.new("TextButton", CfgActionGrid)
+    LoadBtn.Size = UDim2.new(0.48, 0, 0, 34)
+    LoadBtn.Position = UDim2.new(0.52, 0, 0, 0)
+    LoadBtn.BackgroundColor3 = Color3.fromRGB(22, 20, 28)
     LoadBtn.Text = "Carregar Config"
     LoadBtn.TextColor3 = C.White
     LoadBtn.TextSize = 11
@@ -1496,36 +1842,29 @@ function KraviX:CreateWindow(config)
     LoadBtn.ZIndex = MiniConfigs.Frame.ZIndex + 3
     LoadBtn:SetAttribute("RelZIndex", 3)
     mkCorner(LoadBtn, 8)
-    local lSt = mkStroke(LoadBtn, Color3.fromRGB(45, 45, 58), 1, 0)
+    local lSt = mkStroke(LoadBtn, Color3.fromRGB(38, 34, 48), 1, 0)
     lSt:SetAttribute("RelZIndex", 3)
 
     -- Row 2: Delete & Refresh
-    local Row2 = Instance.new("Frame", MiniConfigs.Body)
-    Row2.Size = UDim2.new(1, 0, 0, 26)
-    Row2.BackgroundTransparency = 1
-    Row2.ZIndex = MiniConfigs.Frame.ZIndex + 2
-    Row2:SetAttribute("RelZIndex", 2)
-    local R2List = Instance.new("UIListLayout", Row2)
-    R2List.FillDirection = Enum.FillDirection.Horizontal
-    R2List.Padding = UDim.new(0, 6)
-
-    local DelBtn = Instance.new("TextButton", Row2)
-    DelBtn.Size = UDim2.new(0.5, -3, 1, 0)
-    DelBtn.BackgroundColor3 = Color3.fromRGB(35, 15, 15)
+    local DelBtn = Instance.new("TextButton", CfgActionGrid)
+    DelBtn.Size = UDim2.new(0.48, 0, 0, 34)
+    DelBtn.Position = UDim2.new(0, 0, 0, 40)
+    DelBtn.BackgroundColor3 = Color3.fromRGB(40, 18, 22)
     DelBtn.Text = "Deletar Config"
-    DelBtn.TextColor3 = Color3.fromRGB(240, 150, 150)
+    DelBtn.TextColor3 = Color3.fromRGB(240, 140, 140)
     DelBtn.TextSize = 11
     DelBtn.Font = Enum.Font.GothamBold
     DelBtn.AutoButtonColor = false
     DelBtn.ZIndex = MiniConfigs.Frame.ZIndex + 3
     DelBtn:SetAttribute("RelZIndex", 3)
     mkCorner(DelBtn, 8)
-    local dSt = mkStroke(DelBtn, Color3.fromRGB(80, 30, 30), 1, 0)
+    local dSt = mkStroke(DelBtn, Color3.fromRGB(100, 30, 40), 1, 0)
     dSt:SetAttribute("RelZIndex", 3)
 
-    local RefBtn = Instance.new("TextButton", Row2)
-    RefBtn.Size = UDim2.new(0.5, -3, 1, 0)
-    RefBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 28)
+    local RefBtn = Instance.new("TextButton", CfgActionGrid)
+    RefBtn.Size = UDim2.new(0.48, 0, 0, 34)
+    RefBtn.Position = UDim2.new(0.52, 0, 0, 40)
+    RefBtn.BackgroundColor3 = Color3.fromRGB(22, 20, 28)
     RefBtn.Text = "Atualizar Lista"
     RefBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
     RefBtn.TextSize = 11
@@ -1534,40 +1873,91 @@ function KraviX:CreateWindow(config)
     RefBtn.ZIndex = MiniConfigs.Frame.ZIndex + 3
     RefBtn:SetAttribute("RelZIndex", 3)
     mkCorner(RefBtn, 8)
-    local rSt = mkStroke(RefBtn, Color3.fromRGB(45, 45, 58), 1, 0)
+    local rSt = mkStroke(RefBtn, Color3.fromRGB(38, 34, 48), 1, 0)
     rSt:SetAttribute("RelZIndex", 3)
 
-    local isUpdatingAutoToggle = false
-    local AutoLoadToggle = MiniConfigs:AddToggle("Definir como Auto-Load", false, function(state)
-        if isUpdatingAutoToggle then return end
-        local name = (cfgBox.Text ~= "" and cfgBox.Text or selectedConfig)
+    -- Auto Load Switch
+    local AutoLoadFrame = Instance.new("Frame", MiniConfigs.Body)
+    AutoLoadFrame.Size = UDim2.new(1, 0, 0, 34)
+    AutoLoadFrame.Position = UDim2.new(0, 0, 0, 212)
+    AutoLoadFrame.BackgroundColor3 = Color3.fromRGB(20, 18, 24)
+    AutoLoadFrame.ZIndex = MiniConfigs.Frame.ZIndex + 2
+    AutoLoadFrame:SetAttribute("RelZIndex", 2)
+    mkCorner(AutoLoadFrame, 8)
+    local autoSt = mkStroke(AutoLoadFrame, Color3.fromRGB(36, 32, 44), 1, 0)
+    autoSt:SetAttribute("RelZIndex", 2)
+
+    local AutoText = Instance.new("TextLabel", AutoLoadFrame)
+    AutoText.Size = UDim2.new(0.7, 0, 1, 0)
+    AutoText.Position = UDim2.new(0, 10, 0, 0)
+    AutoText.BackgroundTransparency = 1
+    AutoText.Text = "Definir como Auto-Load"
+    AutoText.TextColor3 = Color3.fromRGB(210, 210, 220)
+    AutoText.TextSize = 11
+    AutoText.Font = Enum.Font.GothamMedium
+    AutoText.TextXAlignment = Enum.TextXAlignment.Left
+    AutoText.ZIndex = MiniConfigs.Frame.ZIndex + 3
+    AutoText:SetAttribute("RelZIndex", 3)
+
+    local AutoSwitch = Instance.new("TextButton", AutoLoadFrame)
+    AutoSwitch.Size = UDim2.new(0, 36, 0, 20)
+    AutoSwitch.Position = UDim2.new(1, -44, 0.5, -10)
+    AutoSwitch.BackgroundColor3 = Color3.fromRGB(35, 30, 42)
+    AutoSwitch.Text = ""
+    AutoSwitch.AutoButtonColor = false
+    AutoSwitch.ZIndex = MiniConfigs.Frame.ZIndex + 3
+    AutoSwitch:SetAttribute("RelZIndex", 3)
+    mkCorner(AutoSwitch, 10)
+
+    local SwitchKnob = Instance.new("Frame", AutoSwitch)
+    SwitchKnob.Size = UDim2.new(0, 16, 0, 16)
+    SwitchKnob.Position = UDim2.new(0, 2, 0.5, -8)
+    SwitchKnob.BackgroundColor3 = Color3.fromRGB(160, 155, 170)
+    SwitchKnob.ZIndex = MiniConfigs.Frame.ZIndex + 4
+    SwitchKnob:SetAttribute("RelZIndex", 4)
+    mkCorner(SwitchKnob, 8)
+
+    local autoLoadState = false
+    local function setAutoLoadUI(state)
+        autoLoadState = state
         if state then
+            Tween(AutoSwitch, {BackgroundColor3 = Color3.fromRGB(236, 72, 138)}, 0.15):Play()
+            Tween(SwitchKnob, {Position = UDim2.new(1, -18, 0.5, -8), BackgroundColor3 = Color3.fromRGB(255, 255, 255)}, 0.15):Play()
+        else
+            Tween(AutoSwitch, {BackgroundColor3 = Color3.fromRGB(35, 30, 42)}, 0.15):Play()
+            Tween(SwitchKnob, {Position = UDim2.new(0, 2, 0.5, -8), BackgroundColor3 = Color3.fromRGB(160, 155, 170)}, 0.15):Play()
+        end
+    end
+
+    AutoSwitch.MouseButton1Click:Connect(function()
+        local name = (cfgBox.Text ~= "" and cfgBox.Text or selectedConfig)
+        autoLoadState = not autoLoadState
+        if autoLoadState then
             Window:SetAutoLoad(name)
         else
             Window:SetAutoLoad("")
         end
+        setAutoLoadUI(autoLoadState)
     end)
 
     local currentConfigList = {}
     local function refreshConfigUI()
         currentConfigList = Window:GetConfigs()
         if #currentConfigList == 0 then
-            ConfigSelectBtn.Text = "Nenhuma config salva"
+            ConfigSelectBtn.Text = "  Nenhuma config salva"
         else
             if not table.find(currentConfigList, selectedConfig) then
                 selectedConfig = currentConfigList[1]
             end
-            ConfigSelectBtn.Text = "Config: " .. selectedConfig
+            ConfigSelectBtn.Text = "  Config: " .. selectedConfig
         end
 
         local autoCfg = Window:GetAutoLoad()
-        isUpdatingAutoToggle = true
         if autoCfg ~= "" and autoCfg == selectedConfig then
-            AutoLoadToggle:Set(true)
+            setAutoLoadUI(true)
         else
-            AutoLoadToggle:Set(false)
+            setAutoLoadUI(false)
         end
-        isUpdatingAutoToggle = false
     end
 
     ConfigSelectBtn.MouseButton1Click:Connect(function()
